@@ -26,6 +26,17 @@ hpc/
 logs/
 record/
 paper*/
+manuscript*/
+submission*/
+supplement*/
+*.tex
+*.bib
+*.bst
+*.cls
+*.sty
+*.pdf
+.latexmkrc
+latexmkrc
 .DS_Store
 *.aux
 *.bbl

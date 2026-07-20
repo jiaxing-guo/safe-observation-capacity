@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using the metadata below.
+type: software
+title: Safe Observation Capacity for Opponent Exploitation under Showdown Censoring
+abstract: Research software for safe active de-censoring and observation capacity in imperfect-information games.
+authors:
+  - family-names: Guo
+    given-names: Jiaxing
+version: 0.1.0
+date-released: 2026-07-21
+license: MIT
+keywords:
+  - imperfect-information games
+  - opponent exploitation
+  - showdown censoring
+  - safe exploration
+  - sequence form

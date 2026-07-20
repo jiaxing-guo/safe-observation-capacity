@@ -78,4 +78,8 @@ This repository is intended for offline research, solver development, and bot-ve
 
 ## License
 
-Licensed under either the Apache License 2.0 or the MIT License, at your option.
+Licensed under the MIT License. See [LICENSE](LICENSE).
+
+## Citation
+
+Citation metadata is available in [CITATION.cff](CITATION.cff).

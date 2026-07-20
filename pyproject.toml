@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "Research code for safe active de-censoring and observation capacity in imperfect-information games."
 readme = "README.md"
 requires-python = ">=3.11"
-license = "MIT OR Apache-2.0"
-license-files = ["LICENSE-MIT", "LICENSE-APACHE"]
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "safe-observation-native",
     "pebble>=5",

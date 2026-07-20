@@ -10,7 +10,7 @@ name = "safe-observation-native"
 version = "0.1.0"
 description = "Native Rust core (heavy compute) for Safe Observation Capacity."
 requires-python = ">=3.11"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 
 [tool.maturin]
 module-name = "safe_observation_native"

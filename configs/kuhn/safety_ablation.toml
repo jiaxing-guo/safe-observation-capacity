@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+[experiment]
+kind = "ablation"
+name = "kuhn_safety_ablation"
+
+[opponent]
+type = "static_biased"
+bet_prob = 0.1
+
+[run]
+rounds = 150
+episodes_per_round = 80
+seeds = [42, 43, 44, 45, 46]
+
+[ablation]
+deltas = [0.01, 0.05, 0.1, 0.2]
+eps_safes = [0.0, 0.05, 0.1, 0.2]
+methods = ["hoeffding", "empirical_bernstein"]
+
+[output]
+dir = "results"
+figures = true

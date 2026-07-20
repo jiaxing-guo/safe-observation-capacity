@@ -1,0 +1,13 @@
+
+
+
+[experiment]
+kind = "blueprint"
+name = "kuhn_blueprint"
+
+[solver]
+method = "lp"
+iterations = 100000
+
+[output]
+dir = "results"

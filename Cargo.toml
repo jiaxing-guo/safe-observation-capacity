@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+[workspace]
+resolver = "2"
+members = ["crates/safe-observation-core", "crates/safe-observation-python"]
+default-members = ["crates/safe-observation-core"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

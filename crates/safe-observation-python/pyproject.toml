@@ -1,0 +1,20 @@
+
+
+
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "safe-observation-native"
+version = "0.1.0"
+description = "Native Rust core (heavy compute) for Safe Observation Capacity."
+requires-python = ">=3.11"
+license = "MIT OR Apache-2.0"
+
+[tool.maturin]
+module-name = "safe_observation_native"
+manifest-path = "Cargo.toml"
+profile = "release"
+editable-profile = "release"
+strip = true

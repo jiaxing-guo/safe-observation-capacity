@@ -1,0 +1,67 @@
+[project]
+name = "safe-observation-capacity"
+version = "0.1.0"
+description = "Research code for safe active de-censoring and observation capacity in imperfect-information games."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT OR Apache-2.0"
+license-files = ["LICENSE-MIT", "LICENSE-APACHE"]
+dependencies = [
+    "safe-observation-native",
+    "pebble>=5",
+]
+
+[project.optional-dependencies]
+
+
+
+analysis = ["numpy>=2.1"]
+solvers = ["scipy>=1.14"]
+viz = ["matplotlib>=3.9"]
+
+[project.scripts]
+safe-observation = "safe_observation.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/safe_observation"]
+
+
+[tool.uv.workspace]
+members = ["crates/safe-observation-python"]
+
+[tool.uv.sources]
+safe-observation-native = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "maturin>=1.7,<2",
+    "ruff>=0.10",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "slow: end-to-end tests that drive full online-adaptation loops (many LP solves); deselect with -m 'not slow'",
+]
+
+[tool.ruff]
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["safe_observation"]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**/*.py" = ["E402"]

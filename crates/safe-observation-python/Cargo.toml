@@ -1,0 +1,16 @@
+[package]
+name = "safe-observation-python"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+license = "MIT OR Apache-2.0"
+description = "PyO3 binding exposing safe-observation-core to Python as the `safe_observation_native` module."
+publish = false
+
+[lib]
+name = "safe_observation_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+safe-observation-core = { path = "../safe-observation-core" }
+pyo3 = { version = "0.29", features = ["extension-module"] }

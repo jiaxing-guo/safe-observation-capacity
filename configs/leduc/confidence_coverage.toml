@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[experiment]
+kind = "coverage"
+name = "leduc_confidence_coverage"
+
+[opponent]
+game = "leduc"
+type = "static_biased"
+
+[run]
+rounds = 40
+episodes_per_round = 50
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+method = "hoeffding"
+
+[coverage]
+deltas = [0.05, 0.1, 0.2]
+
+[output]
+dir = "results"
+figures = true

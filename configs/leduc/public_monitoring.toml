@@ -1,0 +1,30 @@
+
+
+
+
+
+
+[experiment]
+kind = "online_replicated"
+name = "leduc_public_monitoring"
+
+[opponent]
+game = "leduc"
+type = "static_biased"
+
+[run]
+rounds = 60
+episodes_per_round = 200
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+delta = 0.05
+method = "empirical_bernstein"
+monitoring = "public"
+
+[safety]
+eps_safe = 0.0
+
+[output]
+dir = "results"
+figures = true

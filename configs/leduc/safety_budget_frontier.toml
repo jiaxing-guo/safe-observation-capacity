@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+[experiment]
+kind = "budget_frontier"
+name = "leduc_safety_budget_frontier"
+
+[opponent]
+game = "leduc"
+type = "low_reach_leak"
+leak = 0.9
+
+[run]
+rounds = 60
+episodes_per_round = 200
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+delta = 0.05
+method = "empirical_bernstein"
+
+[safety]
+eps_safe = 0.0
+
+[probe]
+beta = 2.0
+budgets = [0.0, 0.1, 0.25, 0.5, 1.0, 2.0]
+
+[output]
+dir = "results"
+figures = true

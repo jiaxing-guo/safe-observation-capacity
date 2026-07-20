@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[experiment]
+kind = "showdown_comparison"
+name = "showdown_comparison"
+
+[run]
+rounds = 60
+episodes_per_round = 200
+seeds = [42, 43, 44, 45, 46]
+workers = 10
+
+[confidence]
+delta = 0.1
+method = "empirical_bernstein"
+
+[safety]
+eps_safe = 0.0
+
+[showdown]
+kappa = 0.2
+rho_cap = 0.5
+debt_max = 3.0
+rnr_p = 0.5
+
+[output]
+dir = "results"
+figures = true

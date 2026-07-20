@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+[experiment]
+kind = "online_replicated"
+name = "kuhn_static_opponent"
+
+[opponent]
+type = "static_biased"
+bet_prob = 0.1
+
+[run]
+rounds = 300
+episodes_per_round = 100
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+delta = 0.05
+method = "hoeffding"
+
+[safety]
+eps_safe = 0.0
+
+[output]
+dir = "results"
+figures = true

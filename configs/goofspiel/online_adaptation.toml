@@ -1,0 +1,29 @@
+
+
+
+
+
+
+[experiment]
+kind = "online_replicated"
+name = "goofspiel_online"
+
+[opponent]
+game = "goofspiel"
+type = "lowball"
+
+[run]
+rounds = 60
+episodes_per_round = 200
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+delta = 0.05
+method = "hoeffding"
+
+[safety]
+eps_safe = 0.0
+
+[output]
+dir = "results"
+figures = true

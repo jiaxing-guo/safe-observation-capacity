@@ -1,0 +1,15 @@
+[package]
+name = "safe-observation-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+license = "MIT OR Apache-2.0"
+description = "Pure-Rust heavy-compute core for Safe Observation Capacity (game trees, CFR, sequence form)."
+publish = false
+
+[lib]
+name = "safe_observation_core"
+
+[dependencies]
+highs = "2.2.0"
+ndarray = "0.17"

@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[experiment]
+kind = "probing"
+name = "leduc_low_reach_probe"
+
+[opponent]
+game = "leduc"
+type = "low_reach_leak"
+leak = 0.9
+
+[run]
+rounds = 60
+episodes_per_round = 200
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+delta = 0.05
+method = "empirical_bernstein"
+
+[safety]
+eps_safe = 0.0
+
+
+
+
+[output]
+dir = "results"
+figures = true

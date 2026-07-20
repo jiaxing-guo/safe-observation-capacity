@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+[experiment]
+kind = "nonstationary_stress"
+name = "drift"
+
+[stress]
+kind = "drift"
+lure = "static_biased"
+drift_power = 1.0
+
+[run]
+rounds = 60
+episodes_per_round = 200
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+delta = 0.05
+method = "hoeffding"
+
+[safety]
+eps_safe = 0.0
+
+[probe]
+rnr_ps = [0.5]
+beta = 2.0
+per_round_budget = 0.5
+
+[output]
+dir = "results"
+figures = true

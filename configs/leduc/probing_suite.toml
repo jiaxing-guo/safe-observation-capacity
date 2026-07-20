@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+[experiment]
+kind = "probing_suite"
+name = "leduc_probing_suite"
+
+[run]
+rounds = 60
+episodes_per_round = 200
+seeds = [42, 43, 44, 45, 46]
+
+[confidence]
+delta = 0.05
+method = "empirical_bernstein"
+
+[safety]
+eps_safe = 0.0
+
+[probe]
+beta = 2.0
+per_round_budget = 0.5
+
+[output]
+dir = "results"
+figures = false

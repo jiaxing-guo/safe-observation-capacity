@@ -24,4 +24,4 @@ The public interface is grouped by responsibility:
 
 Reusable library code lives under `src` and `crates`. One-off study entry points live under `scripts`, separated into poker studies, controlled instances, reporting, and validation. Configurations are grouped by game rather than by internal development milestone.
 
-Generated data is written to ignored directories and is not part of the source release.
+Generated data is written to ignored directories.

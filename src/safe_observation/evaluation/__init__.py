@@ -1,4 +1,4 @@
-"""Public interfaces for evaluation. See supplementary Reproducibility for its role in the release workflow."""
+"""Public interfaces for experiment evaluation and result storage."""
 
 import json
 from pathlib import Path

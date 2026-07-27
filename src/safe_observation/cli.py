@@ -1,4 +1,4 @@
-"""CLI primitives for safe-observation experiments. See supplementary Reproducibility for its role in the release workflow."""
+"""Command-line interface for configured safe-observation experiments."""
 
 import argparse
 

@@ -1,1 +1,1 @@
-"""Research utility for scripts. See supplementary Reproducibility for its role in the release workflow."""
+"""Experiment, validation, and reporting entry points."""

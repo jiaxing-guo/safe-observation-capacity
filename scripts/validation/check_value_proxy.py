@@ -1,4 +1,4 @@
-"""Check value proxy. See supplementary Reproducibility for its role in the release workflow."""
+"""Evaluate public anomaly scores as proxies for recoverable value."""
 
 import sys
 

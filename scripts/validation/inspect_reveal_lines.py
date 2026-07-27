@@ -1,4 +1,4 @@
-"""Inspect reveal lines. See supplementary Reproducibility for its role in the release workflow."""
+"""Inspect whether candidate poker lines satisfy reveal certification."""
 
 import sys
 

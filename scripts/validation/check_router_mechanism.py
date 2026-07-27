@@ -1,4 +1,4 @@
-"""Check router mechanism. See supplementary Reproducibility for its role in the release workflow."""
+"""Check the signals and reach rates used by the acquisition router."""
 
 import multiprocessing as mp
 import statistics as st

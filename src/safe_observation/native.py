@@ -1,4 +1,4 @@
-"""Native primitives for safe-observation experiments. See supplementary Reproducibility for its role in the release workflow."""
+"""Bindings to native game and optimization routines."""
 
 try:
     import safe_observation_native as _native

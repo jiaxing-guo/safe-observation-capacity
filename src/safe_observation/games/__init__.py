@@ -1,4 +1,4 @@
-"""Public interfaces for games. See supplementary Reproducibility for its role in the release workflow."""
+"""Game construction interfaces used by configured experiments."""
 
 AVAILABLE_GAMES: tuple[str, ...] = ("kuhn",)
 

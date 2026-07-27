@@ -1,7 +1,5 @@
 # Reproduction guide
 
-The release contains source and experiment definitions but no generated results, figures, logs, review artifacts, or cluster submission files.
-
 ## Small reference runs
 
 ```bash
@@ -20,23 +18,34 @@ uv run safe-observation run configs/holdem/showdown_sweep.toml
 
 ## Safe active de-censoring
 
-The principal study entry points are:
+The principal controller entry point is `scripts/poker/run_safe_active_decensoring.py`.
+Each empirical cell charges one total budget: public-only collection spends it under
+the blueprint, while active arms use a 20% blueprint pilot and a disjoint 80% reveal
+batch. The route is frozen before the reveal batch.
 
-- `scripts/poker/run_safe_active_decensoring.py`
-- `scripts/poker/run_active_decensoring.py`
-- `scripts/poker/run_identification_coverage.py`
-- `scripts/poker/run_observation_capacity_frontier.py`
-- `scripts/poker/run_opponent_population.py`
-- `scripts/poker/audit_residual_ambiguity.py`
-- `scripts/poker/run_turn_river_methods.py`
-
-Run a script from the repository root as a module, for example:
+Run the headline grid with:
 
 ```bash
-uv run python -m scripts.poker.run_safe_active_decensoring
+SAD_MODES=cpub,random,sad,oracle_target,oracle \
+uv run python -m scripts.poker.run_safe_active_decensoring \
+  holdem_tr_b2 0.5 1000000 10 10 600
 ```
 
-Scripts expose their experiment sizes through command-line arguments or environment variables and write outputs beneath ignored local directories.
+Run the matched-budget crossover study with:
+
+```bash
+SAD_MODES=cpub,random,sad \
+uv run python -m scripts.poker.run_safe_active_decensoring \
+  holdem_tr_b2 0.5 100000,300000,1000000 10 10 600
+```
+
+Related mechanism and scope entry points are
+`scripts/poker/run_active_decensoring.py`,
+`scripts/poker/run_identification_coverage.py`,
+`scripts/poker/run_observation_capacity_frontier.py`,
+`scripts/poker/run_opponent_population.py`,
+`scripts/poker/audit_residual_ambiguity.py`, and
+`scripts/poker/run_turn_river_methods.py`.
 
 ## Controlled instances
 

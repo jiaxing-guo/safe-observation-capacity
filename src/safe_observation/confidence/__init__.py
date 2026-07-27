@@ -1,10 +1,55 @@
 """Public interfaces for confidence. See Public and Active Confidence Sets and supplementary Confidence Sets under Censoring."""
 
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 import math
 
 from .. import native
 from ..sequence_form import compile as compile_game
+
+
+@dataclass(frozen=True)
+class SimultaneousDeltaBudget:
+    """One failure budget allocated across public and reveal constraints."""
+
+    global_delta: float
+    public_rows: int
+    reveal_rows: int
+    public_delta: float
+    reveal_delta: float
+    public_row_delta: float | None
+    reveal_row_delta: float | None
+
+    @property
+    def allocated_delta(self) -> float:
+        """Return the family-level failure probability charged by the allocation."""
+        return self.public_delta + self.reveal_delta
+
+
+def allocate_simultaneous_delta(
+    delta: float,
+    *,
+    public_rows: int,
+    reveal_rows: int,
+) -> SimultaneousDeltaBudget:
+    """Split a global failure budget over nonempty families and their rows."""
+    if not 0.0 < delta < 1.0:
+        raise ValueError("delta must be in the open interval (0, 1)")
+    if public_rows < 0 or reveal_rows < 0:
+        raise ValueError("confidence-family row counts must be non-negative")
+    active_families = int(public_rows > 0) + int(reveal_rows > 0)
+    family_delta = delta / active_families if active_families else 0.0
+    public_delta = family_delta if public_rows else 0.0
+    reveal_delta = family_delta if reveal_rows else 0.0
+    return SimultaneousDeltaBudget(
+        global_delta=delta,
+        public_rows=public_rows,
+        reveal_rows=reveal_rows,
+        public_delta=public_delta,
+        reveal_delta=reveal_delta,
+        public_row_delta=public_delta / public_rows if public_rows else None,
+        reveal_row_delta=reveal_delta / reveal_rows if reveal_rows else None,
+    )
 
 
 def hoeffding_halfwidth(n: int, delta: float) -> float:
@@ -186,6 +231,15 @@ class OpponentEvidenceStore:
                 for i, c in enumerate(row):
                     cur[i] += c
         return agg
+
+    @property
+    def num_public_pairs(self) -> int:
+        """Return the number of public action coordinates in a simultaneous set."""
+        return sum(len(row) for row in self._public_counts().values())
+
+    def public_counts(self) -> dict[str, tuple[int, ...]]:
+        """Return aggregated public counts without exposing private labels."""
+        return {key: tuple(row) for key, row in self._public_counts().items()}
 
     def public_intervals(
         self, delta: float, method: str = "hoeffding", union_bound: bool = True

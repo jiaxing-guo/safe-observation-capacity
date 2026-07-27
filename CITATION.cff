@@ -6,6 +6,8 @@ abstract: Research software for safe active de-censoring and observation capacit
 authors:
   - family-names: Guo
     given-names: Jiaxing
+    email: henry.guo23@imperial.ac.uk
+    affiliation: Imperial College London
 version: 0.1.0
 date-released: 2026-07-21
 license: MIT

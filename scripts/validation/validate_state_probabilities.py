@@ -1,4 +1,4 @@
-"""Validate state probabilities. See supplementary Reproducibility for its role in the release workflow."""
+"""Validate public-state reach and action probabilities."""
 
 import json
 import tempfile

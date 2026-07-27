@@ -1,4 +1,4 @@
-"""Validate fold rate. See supplementary Reproducibility for its role in the release workflow."""
+"""Validate fold-rate estimates against sequence-form realization mass."""
 
 import json
 import tempfile

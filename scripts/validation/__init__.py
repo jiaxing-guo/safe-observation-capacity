@@ -1,1 +1,1 @@
-"""Research utility for validation. See supplementary Reproducibility for its role in the release workflow."""
+"""Validation entry points for observation and value guarantees."""

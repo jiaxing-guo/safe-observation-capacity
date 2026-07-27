@@ -1,4 +1,4 @@
-"""Check capacity sensitivity. See supplementary Reproducibility for its role in the release workflow."""
+"""Check how safe observation capacity changes with the safety budget."""
 
 import json
 import multiprocessing as mp

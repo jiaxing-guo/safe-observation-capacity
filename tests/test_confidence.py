@@ -7,11 +7,27 @@ import pytest
 
 from safe_observation.confidence import (
     OpponentEvidenceStore,
+    allocate_simultaneous_delta,
     empirical_bernstein_halfwidth,
     empirical_bernstein_interval,
     hoeffding_halfwidth,
     hoeffding_interval,
 )
+
+
+def test_simultaneous_delta_splits_only_across_active_families():
+    """Verify the global guarantee is charged once across active families."""
+    both = allocate_simultaneous_delta(0.1, public_rows=20, reveal_rows=30)
+    assert both.public_delta == pytest.approx(0.05)
+    assert both.reveal_delta == pytest.approx(0.05)
+    assert both.public_row_delta == pytest.approx(0.05 / 20)
+    assert both.reveal_row_delta == pytest.approx(0.05 / 30)
+    assert both.allocated_delta == pytest.approx(0.1)
+
+    public_only = allocate_simultaneous_delta(0.1, public_rows=20, reveal_rows=0)
+    assert public_only.public_delta == pytest.approx(0.1)
+    assert public_only.reveal_delta == 0.0
+    assert public_only.reveal_row_delta is None
 
 
 def test_halfwidth_matches_formula():
@@ -84,6 +100,17 @@ def test_evidence_store_record_validates_length():
     store = OpponentEvidenceStore.for_kuhn()
     with pytest.raises(ValueError):
         store.record(store.labels[0], [1, 2, 3])
+
+
+def test_public_count_view_hides_private_labels_and_counts_rows():
+    """Verify public aggregation exposes only public histories."""
+    store = OpponentEvidenceStore.for_kuhn()
+    for label in store.labels:
+        store.record(label, [1, 2])
+    public = store.public_counts()
+    assert set(public) == {label.split(":", 1)[1] for label in store.labels}
+    assert all(isinstance(row, tuple) for row in public.values())
+    assert store.num_public_pairs == sum(len(row) for row in public.values())
 
 
 def test_union_bound_widens_intervals():

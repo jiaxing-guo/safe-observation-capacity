@@ -24,8 +24,6 @@ scripts/
 tests/                        Python integration and regression tests
 ```
 
-Generated results, figures, logs, review artifacts, and cluster job definitions are intentionally absent from this repository.
-
 ## Requirements
 
 - Python 3.11 or newer
@@ -63,7 +61,7 @@ uv run safe-observation run configs/leduc/confidence_coverage.toml
 uv run safe-observation run configs/holdem/showdown_censoring.toml
 ```
 
-The experiment scripts write generated data to ignored local directories. See [docs/reproduction.md](docs/reproduction.md) for the release-facing experiment map.
+The experiment scripts write generated data to ignored local directories. See [docs/reproduction.md](docs/reproduction.md) for the experiment map.
 
 ## Verification
 

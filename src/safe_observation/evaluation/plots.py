@@ -1,4 +1,4 @@
-"""Plots primitives for safe-observation experiments. See supplementary Reproducibility for its role in the release workflow."""
+"""Plotting utilities for safe-observation experiments."""
 
 from pathlib import Path
 from typing import Any

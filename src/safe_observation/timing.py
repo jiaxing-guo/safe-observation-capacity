@@ -1,4 +1,4 @@
-"""Timing primitives for safe-observation experiments. See supplementary Reproducibility for its role in the release workflow."""
+"""Timing utilities for experiment stages."""
 
 from collections.abc import Iterator
 from contextlib import contextmanager

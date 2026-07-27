@@ -1,4 +1,4 @@
-"""Check value fiber. See supplementary Reproducibility for its role in the release workflow."""
+"""Measure value variation within public and reveal observation fibers."""
 
 import sys
 

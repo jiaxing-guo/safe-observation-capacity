@@ -1,4 +1,4 @@
-""
+"""Run the observation capacity frontier experiment. See Safe Active De-censoring and supplementary Algorithms."""
 
 import json
 import multiprocessing as mp
@@ -40,6 +40,7 @@ _W: dict[str, Any] = {}
 
 
 def _init() -> None:
+    """Initialize process-local state for parallel experiment workers."""
     sf1 = compile_game(GAME, 1)
     fold_idx = _fold_action_indices(sf1)
     bp = solve_blueprint(GAME, method="lp")
@@ -60,7 +61,7 @@ def _init() -> None:
 
 
 def _kappa(task: tuple[str, float]) -> tuple[str, float, float, float]:
-    ""
+    """Solve safe observation capacity at the supplied safety budget."""
     label, rho = task
     pr = robust_safe_response_probe(
         _W["triv_iv"],
@@ -82,6 +83,7 @@ def _kappa(task: tuple[str, float]) -> tuple[str, float, float, float]:
 
 
 def _quantile(xs: list[float], q: float) -> float:
+    """Compute an interpolated empirical quantile."""
     if not xs:
         return 0.0
     s = sorted(xs)
@@ -90,6 +92,7 @@ def _quantile(xs: list[float], q: float) -> float:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf1 = compile_game(GAME, 1)
     bp = solve_blueprint(GAME, method="lp")
     v_ref = bp.value
@@ -102,6 +105,7 @@ def main() -> None:
     y_star = list(Opponent(name=LEAK, behavior=suite[LEAK], game=GAME).realization())
 
     def is_river(label: str) -> bool:
+        """Return whether river for the run observation capacity frontier workflow."""
         return "/" in (label.split("|", 1)[1] if "|" in label else "")
 
     carriers: list[tuple[str, float, float]] = []

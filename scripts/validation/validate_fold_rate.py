@@ -1,4 +1,4 @@
-""
+"""Validate fold rate. See supplementary Reproducibility for its role in the release workflow."""
 
 import json
 import tempfile
@@ -36,7 +36,7 @@ WANT = {
 
 
 def fold_rate(show, fold, fold_idx) -> tuple[float, float]:
-    ""
+    """Compute fold rate for the validate fold rate workflow."""
     fold_mass = 0.0
     total = 0.0
     for store in (show, fold):
@@ -49,6 +49,7 @@ def fold_rate(show, fold, fold_idx) -> tuple[float, float]:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     suite = holdem_showdown_opponent_suite()
     bp = solve_blueprint(GAME, method="lp")
     assert bp.realization is not None

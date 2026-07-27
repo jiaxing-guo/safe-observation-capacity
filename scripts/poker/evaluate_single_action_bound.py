@@ -1,4 +1,4 @@
-""
+"""Evaluate the single action bound experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -27,7 +27,7 @@ M = np.array(
 
 
 def _payoff_columns() -> np.ndarray:
-    ""
+    """Compute payoff columns for the evaluate single action bound workflow."""
 
     return np.array(
         [[M[a, 0], PHI, M[a, 1], PHI] for a in range(M.shape[0])], dtype=float
@@ -35,6 +35,7 @@ def _payoff_columns() -> np.ndarray:
 
 
 def _y_star(w1: float, beta: float, delta: float) -> np.ndarray:
+    """Compute y star for the evaluate single action bound workflow."""
     w2 = 1.0 - w1
     return np.array(
         [w1 * (1.0 - beta - delta), w1 * (beta + delta), w2 * (1.0 - beta), w2 * beta]
@@ -42,7 +43,7 @@ def _y_star(w1: float, beta: float, delta: float) -> np.ndarray:
 
 
 def _y_vertices_full(w1: float) -> list[np.ndarray]:
-    ""
+    """Compute y vertices full for the evaluate single action bound workflow."""
     w2 = 1.0 - w1
     verts = []
     for c1 in (0.0, w1):
@@ -52,7 +53,7 @@ def _y_vertices_full(w1: float) -> list[np.ndarray]:
 
 
 def _cpub_vertices(w1: float, beta: float, delta: float) -> list[np.ndarray]:
-    ""
+    """Compute cpub vertices for the evaluate single action bound workflow."""
     w2 = 1.0 - w1
     y = _y_star(w1, beta, delta)
     c_star = y[0] + y[2]
@@ -66,7 +67,7 @@ def _cpub_vertices(w1: float, beta: float, delta: float) -> list[np.ndarray]:
 
 
 def _maximin(P_cols: np.ndarray, safety_cols: np.ndarray, floor: float) -> np.ndarray:
-    ""
+    """Compute maximin for the evaluate single action bound workflow."""
     m, nc = P_cols.shape
     ns = safety_cols.shape[1]
 
@@ -96,7 +97,7 @@ def _maximin(P_cols: np.ndarray, safety_cols: np.ndarray, floor: float) -> np.nd
 
 
 def _best_response(g: np.ndarray, safety_cols: np.ndarray, floor: float) -> np.ndarray:
-    ""
+    """Compute best response for the evaluate single action bound workflow."""
     m = g.shape[0]
     ns = safety_cols.shape[1]
     c = -g
@@ -114,7 +115,7 @@ def _best_response(g: np.ndarray, safety_cols: np.ndarray, floor: float) -> np.n
 
 
 def _v_ref(A: np.ndarray, w1: float, beta: float) -> float:
-    ""
+    """Compute v ref for the evaluate single action bound workflow."""
     safety_cols = np.column_stack([A @ u for u in _y_vertices_full(w1)])
     x_sec = _maximin(safety_cols, safety_cols, floor=-1e9)
     g_eq = A @ _y_star(w1, beta, 0.0)
@@ -122,6 +123,7 @@ def _v_ref(A: np.ndarray, w1: float, beta: float) -> float:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     w1 = W1
     A = _payoff_columns()
     safety_cols = np.column_stack([A @ u for u in _y_vertices_full(w1)])

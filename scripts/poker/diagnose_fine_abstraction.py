@@ -1,4 +1,4 @@
-""
+"""Diagnose fine abstraction. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import sys
 
@@ -15,7 +15,7 @@ from scripts.poker import run_safe_active_decensoring as D
 
 
 def concentration(omega):
-    ""
+    """Compute concentration for the diagnose fine abstraction workflow."""
     vals = sorted((v for v in omega.values() if v > 0), reverse=True)
     if not vals:
         return float("nan")
@@ -25,6 +25,7 @@ def concentration(omega):
 
 
 def main():
+    """Run the command-line entry point."""
     D._init()
     sf1, groups, info_by = D._W["sf1"], D._W["groups"], D._W["info_by"]
     v_ref, omega_bp, fold_idx = D._W["v_ref"], D._W["omega_bp"], D._W["fold_idx"]

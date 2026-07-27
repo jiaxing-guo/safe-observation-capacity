@@ -1,4 +1,4 @@
-""
+"""Evaluate the public routing experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from collections.abc import Callable
 import json
@@ -31,14 +31,20 @@ OUT = Path(os.environ.get("PUBLIC_ROUTING_OUT", f"results/public_routing_{GAME}.
 
 
 def _river_fold_pick(actions: dict[str, list[str]]) -> Callable:
+    """Compute river fold pick for the evaluate public routing workflow."""
+
     def pick(hole, hist, acts):
+        """Compute pick for the evaluate public routing workflow."""
         return "/" in hist and "f" in acts
 
     return pick
 
 
 def _turn_fold_pick(actions: dict[str, list[str]]) -> Callable:
+    """Compute turn fold pick for the evaluate public routing workflow."""
+
     def pick(hole, hist, acts):
+        """Compute pick for the evaluate public routing workflow."""
         return "/" not in hist and "f" in acts
 
     return pick
@@ -47,7 +53,7 @@ def _turn_fold_pick(actions: dict[str, list[str]]) -> Callable:
 def _build_gate_suite(
     game: str, actions: dict[str, list[str]], eq: dict[str, list[float]]
 ) -> dict[str, dict[str, float]]:
-    ""
+    """Build gate suite for the evaluate public routing workflow."""
     river_pick = _river_fold_pick(actions)
     turn_pick = _turn_fold_pick(actions)
     suite: dict[str, dict[str, float]] = {"tr_equilibrium": eq}
@@ -86,7 +92,7 @@ def _diagnostic_D(
     omega: dict[str, float],
     fold_idx: dict[str, int],
 ) -> dict[str, float]:
-    ""
+    """Compute diagnostic d for the evaluate public routing workflow."""
     revealed = 0.0
     turn = 0.0
     river = 0.0
@@ -117,6 +123,7 @@ def _diagnostic_D(
 
 
 def _pearson(xs: list[float], ys: list[float]) -> float:
+    """Compute the Pearson correlation between two score vectors."""
     n = len(xs)
     if n < 2:
         return 0.0
@@ -131,7 +138,10 @@ def _pearson(xs: list[float], ys: list[float]) -> float:
 
 
 def _spearman(xs: list[float], ys: list[float]) -> float:
+    """Compute Spearman rank correlation between two score vectors."""
+
     def ranks(v: list[float]) -> list[float]:
+        """Assign average ranks while preserving tied values."""
         order = sorted(range(len(v)), key=lambda i: v[i])
         r = [0.0] * len(v)
         i = 0
@@ -149,6 +159,7 @@ def _spearman(xs: list[float], ys: list[float]) -> float:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     print(
         f"# C_obs GATE test (Q4, cheap diagnostic vs obs-core)  game={game}  rho={RHO}",
@@ -205,6 +216,7 @@ def main() -> None:
         )
 
         def realized(response, y_star=y_star) -> float:
+            """Evaluate a realization plan against the selected opponent."""
             return payoff.bilinear(list(response.realization), y_star) - v_ref
 
         core_gain = realized(core)

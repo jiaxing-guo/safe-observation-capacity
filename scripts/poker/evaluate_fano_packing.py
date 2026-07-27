@@ -1,4 +1,4 @@
-""
+"""Evaluate the Fano packing experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ BETA = 1e6
 
 
 def _continue_behavior(sf, fold_idx):
-    ""
+    """Compute continue behavior for the evaluate Fano packing workflow."""
     cont = {}
     for info in sf.info_sets:
         n = len(info.children)
@@ -41,7 +41,7 @@ def _continue_behavior(sf, fold_idx):
 
 
 def _probe(triv_iv, cont_beh, weights, v_ref, rho):
-    ""
+    """Compute probe for the evaluate Fano packing workflow."""
     pr = robust_safe_response_probe(
         triv_iv,
         cont_beh,
@@ -56,7 +56,7 @@ def _probe(triv_iv, cont_beh, weights, v_ref, rho):
 
 
 def _select_targets(sf, eq, yr_base, mmax):
-    ""
+    """Select targets for the evaluate Fano packing workflow."""
     cands = _pick_targets(sf, eq, yr_base, max_targets=mmax * 4)
     out = []
     for cand in cands:
@@ -88,7 +88,7 @@ def _select_targets(sf, eq, yr_base, mmax):
 
 
 def _feasibility_radius(targets):
-    ""
+    """Compute feasibility radius for the evaluate Fano packing workflow."""
     eq = holdem_equilibrium_opponent(GAME).behavior
     radii = []
     for t in targets:
@@ -106,6 +106,7 @@ def _feasibility_radius(targets):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     t0 = time.time()
     sf = compile_game(GAME, 1)
     fold_idx = _fold_action_indices(sf)

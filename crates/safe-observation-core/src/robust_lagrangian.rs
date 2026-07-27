@@ -1,8 +1,11 @@
+//! Robust lagrangian algorithms for safe observation. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River.
+
 use crate::best_response::treeplex_opt;
 use crate::confidence::ConfidenceSet;
 use crate::payoff_oracle::PayoffOracle;
 use crate::sequence_form::SequenceForm;
 
+/// Stores state for treeplex rm.
 pub struct TreeplexRm<'a> {
     sf: &'a SequenceForm,
 
@@ -14,7 +17,9 @@ pub struct TreeplexRm<'a> {
     avg_weight: f64,
 }
 
+/// Implements operations for `TreeplexRm<'a>`.
 impl<'a> TreeplexRm<'a> {
+    /// Constructs a new value from the supplied configuration.
     pub fn new(sf: &'a SequenceForm) -> Self {
         let mut offset = Vec::with_capacity(sf.info_sets.len());
         let mut total = 0usize;
@@ -31,6 +36,7 @@ impl<'a> TreeplexRm<'a> {
         }
     }
 
+    /// Return the opponent policy as a sequence-form realization plan.
     pub fn realization(&self) -> Vec<f64> {
         let mut x = vec![0.0; self.sf.num_sequences()];
         x[0] = 1.0;
@@ -51,6 +57,7 @@ impl<'a> TreeplexRm<'a> {
         x
     }
 
+    /// Update state from newly observed opponent actions.
     pub fn observe(&mut self, x: &[f64], seq_util: &[f64], w: f64) {
         let mut sv = seq_util.to_vec();
         for (k, info) in self.sf.info_sets.iter().enumerate().rev() {
@@ -77,6 +84,7 @@ impl<'a> TreeplexRm<'a> {
         self.avg_weight += w;
     }
 
+    /// Computes average.
     pub fn average(&self) -> Vec<f64> {
         if self.avg_weight == 0.0 {
             return self.realization();
@@ -85,6 +93,7 @@ impl<'a> TreeplexRm<'a> {
     }
 }
 
+/// Stores state for lagrangian params.
 pub struct LagrangianParams {
     pub iters: usize,
 
@@ -98,7 +107,9 @@ pub struct LagrangianParams {
     pub check_every: usize,
 }
 
+/// Implements operations for `LagrangianParams`.
 impl Default for LagrangianParams {
+    /// Returns the default configuration.
     fn default() -> Self {
         Self {
             iters: 20_000,
@@ -111,6 +122,7 @@ impl Default for LagrangianParams {
     }
 }
 
+/// Stores state for lagrangian solution.
 pub struct LagrangianSolution {
     pub realization: Vec<f64>,
 
@@ -123,6 +135,7 @@ pub struct LagrangianSolution {
     pub iters: usize,
 }
 
+/// Computes lambda certificate.
 pub fn lambda_certificate(
     sf1: &SequenceForm,
     conf: &ConfidenceSet,
@@ -137,6 +150,7 @@ pub fn lambda_certificate(
     treeplex_opt(sf1, shifted, false).value - lam_h
 }
 
+/// Computes robust response lagrangian.
 pub fn robust_response_lagrangian<O: PayoffOracle>(
     oracle: &O,
     sf0: &SequenceForm,
@@ -209,6 +223,7 @@ pub fn robust_response_lagrangian<O: PayoffOracle>(
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::holdem::{build_holdem, canonical_holdem, compile_holdem};
@@ -218,6 +233,7 @@ mod tests {
     use crate::robust_cuts::{inner_min_lp, repair_to_floor};
 
     #[test]
+    /// Verifies that lagrangian certifies near exact on compact river.
     fn lagrangian_certifies_near_exact_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);

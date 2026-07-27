@@ -1,4 +1,4 @@
-""
+"""Regression tests for test timing. See the corresponding implementation module and supplementary Reproducibility."""
 
 from safe_observation.experiments.online import (
     run_online_adaptation,
@@ -9,6 +9,7 @@ from safe_observation.timing import StageTimer
 
 
 def test_stage_timer_accumulates_seconds_and_calls():
+    """Verify that stage timer accumulates seconds and calls."""
     timer = StageTimer()
     with timer.stage("work"):
         sum(range(1000))
@@ -21,6 +22,7 @@ def test_stage_timer_accumulates_seconds_and_calls():
 
 
 def test_stage_timer_add_and_merge():
+    """Verify that stage timer add and merge."""
     a = StageTimer()
     a.add("solve", 1.5)
     b = StageTimer()
@@ -35,6 +37,7 @@ def test_stage_timer_add_and_merge():
 
 
 def test_online_results_include_stage_timings():
+    """Verify that online results include stage timings."""
     results = run_online_adaptation(
         static_biased_opponent(),
         rounds=5,
@@ -51,6 +54,7 @@ def test_online_results_include_stage_timings():
 
 
 def test_replicated_results_aggregate_timings_across_seeds():
+    """Verify that replicated results aggregate timings across seeds."""
     results = run_online_adaptation_replicated(
         static_biased_opponent(),
         rounds=4,

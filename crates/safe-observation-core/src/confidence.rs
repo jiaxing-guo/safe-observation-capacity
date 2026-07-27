@@ -1,8 +1,11 @@
+//! Confidence algorithms for safe observation. See Public and Active Confidence Sets and supplementary Confidence Sets under Censoring.
+
 use std::collections::{BTreeMap, HashMap};
 
 use crate::game::{Game, Node};
 use crate::sequence_form::{compile_kuhn, InfoSet, SequenceForm};
 
+/// Stores state for confidence set.
 pub struct ConfidenceSet {
     pub ncols: usize,
 
@@ -15,7 +18,9 @@ pub struct ConfidenceSet {
     pub row_meta: Vec<(String, usize)>,
 }
 
+/// Implements operations for `ConfidenceSet`.
 impl ConfidenceSet {
+    /// Computes max violation.
     pub fn max_violation(&self, y: &[f64]) -> f64 {
         let mut gy = vec![0.0; self.nrows];
         for &(r, c, v) in &self.g_entries {
@@ -27,6 +32,7 @@ impl ConfidenceSet {
             .fold(f64::NEG_INFINITY, f64::max)
     }
 
+    /// Intersect this confidence set with the supplied constraints.
     pub fn intersect(mut self, other: ConfidenceSet) -> ConfidenceSet {
         assert_eq!(
             self.ncols, other.ncols,
@@ -48,6 +54,7 @@ impl ConfidenceSet {
     }
 }
 
+/// Build the configured game or confidence object.
 pub fn build(sf: &SequenceForm, intervals: &HashMap<String, Vec<(f64, f64)>>) -> ConfidenceSet {
     let mut g_entries = Vec::new();
     let mut row_meta: Vec<(String, usize)> = Vec::new();
@@ -57,6 +64,8 @@ pub fn build(sf: &SequenceForm, intervals: &HashMap<String, Vec<(f64, f64)>>) ->
         let bounds = intervals.get(&info.label);
         for (i, &(_, child)) in info.children.iter().enumerate() {
             let (l, u) = bounds.and_then(|b| b.get(i)).copied().unwrap_or((0.0, 1.0));
+            // Conditional bounds l <= pi(a|I) <= u become linear sequence-form
+            // inequalities l*y_parent <= y_child <= u*y_parent.
             if l > 0.0 {
                 g_entries.push((nrows, parent, l));
                 g_entries.push((nrows, child, -1.0));
@@ -81,11 +90,13 @@ pub fn build(sf: &SequenceForm, intervals: &HashMap<String, Vec<(f64, f64)>>) ->
     }
 }
 
+/// Build Kuhn.
 pub fn build_kuhn(intervals: &HashMap<String, Vec<(f64, f64)>>) -> ConfidenceSet {
     let sf = compile_kuhn(1);
     build(&sf, intervals)
 }
 
+/// Build boxes.
 pub fn build_boxes(sf: &SequenceForm, boxes: &HashMap<String, Vec<(f64, f64)>>) -> ConfidenceSet {
     let mut g_entries = Vec::new();
     let mut row_meta: Vec<(String, usize)> = Vec::new();
@@ -124,6 +135,7 @@ pub fn build_boxes(sf: &SequenceForm, boxes: &HashMap<String, Vec<(f64, f64)>>) 
     }
 }
 
+/// Build linear.
 pub fn build_linear(
     sf: &SequenceForm,
     entries: Vec<(usize, usize, f64)>,
@@ -154,6 +166,7 @@ pub fn build_linear(
     }
 }
 
+/// Build public.
 pub fn build_public(
     sf: &SequenceForm,
     groups: &HashMap<String, Vec<String>>,
@@ -184,6 +197,8 @@ pub fn build_public(
         let weight_of =
             |m: &crate::sequence_form::InfoSet| weights.get(&m.label).copied().unwrap_or(1.0);
 
+        // Coalesce repeated columns because several private histories in one
+        // public fiber may share sequence variables.
         let push_row =
             |g: &mut Vec<(usize, usize, f64)>, row: &mut usize, cells: &[(usize, f64)]| {
                 let mut acc: BTreeMap<usize, f64> = BTreeMap::new();
@@ -232,6 +247,7 @@ pub fn build_public(
     }
 }
 
+/// Compute weights for opponent reach.
 pub fn opponent_reach_weights<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -254,6 +270,7 @@ pub fn opponent_reach_weights<G: Game>(
     omega
 }
 
+/// Stores state for reach walk.
 struct ReachWalk<'a, G: Game> {
     game: &'a G,
     by_label: &'a HashMap<&'a str, &'a InfoSet>,
@@ -261,7 +278,9 @@ struct ReachWalk<'a, G: Game> {
     omega: &'a mut HashMap<String, f64>,
 }
 
+/// Implements operations for `ReachWalk<'_, G>`.
 impl<G: Game> ReachWalk<'_, G> {
+    /// Traverse the game tree while accumulating reach contributions.
     fn walk(&mut self, state: &G::State, agent_seq: usize, chance: f64) {
         match self.game.node(state) {
             Node::Terminal(_) => {}
@@ -287,6 +306,8 @@ impl<G: Game> ReachWalk<'_, G> {
                         self.walk(next, child, chance);
                     }
                 } else {
+                    // Reach excludes opponent behavior: it is the observable
+                    // coefficient induced by chance and the deployed agent.
                     *self.omega.entry(infoset.clone()).or_insert(0.0) +=
                         chance * self.x_agent[agent_seq];
                     for (_ch, next) in &actions {
@@ -298,6 +319,7 @@ impl<G: Game> ReachWalk<'_, G> {
     }
 }
 
+/// Computes agent showdown reach.
 pub fn agent_showdown_reach<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -336,6 +358,7 @@ pub fn agent_showdown_reach<G: Game>(
     out
 }
 
+/// Stores state for sd walk.
 struct SdWalk<'a, G: Game> {
     game: &'a G,
     by_label: &'a HashMap<&'a str, &'a InfoSet>,
@@ -345,7 +368,9 @@ struct SdWalk<'a, G: Game> {
     is_last: &'a mut HashMap<String, Vec<bool>>,
 }
 
+/// Implements operations for `SdWalk<'_, G>`.
 impl<G: Game> SdWalk<'_, G> {
+    /// Return an existing entry or create it when absent.
     fn ensure(&mut self, label: &str, n: usize) {
         self.sd
             .entry(label.to_string())
@@ -358,6 +383,7 @@ impl<G: Game> SdWalk<'_, G> {
             .or_insert_with(|| vec![false; n]);
     }
 
+    /// Traverse the game tree while accumulating reach contributions.
     fn walk(
         &mut self,
         state: &G::State,
@@ -372,6 +398,9 @@ impl<G: Game> SdWalk<'_, G> {
                     return;
                 }
                 if let Some((last_label, last_a)) = path.last() {
+                    // A non-fold terminal reveals the pending opponent path.
+                    // Direct mass belongs to the closing action; earlier
+                    // actions are flagged as having a deeper reveal.
                     let add = chance * self.x_agent[agent_seq];
                     self.sd.get_mut(last_label).unwrap()[*last_a] += add;
                     self.is_last.get_mut(last_label).unwrap()[*last_a] = true;
@@ -415,9 +444,11 @@ impl<G: Game> SdWalk<'_, G> {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
 
+    /// Computes uniform intervals.
     fn uniform_intervals(half: f64) -> HashMap<String, Vec<(f64, f64)>> {
         let sf = compile_kuhn(1);
         let mut m = HashMap::new();
@@ -431,6 +462,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that row meta matches rows and points to active intervals.
     fn row_meta_matches_rows_and_points_to_active_intervals() {
         let sf = compile_kuhn(1);
         let cs = build(&sf, &uniform_intervals(0.1));
@@ -447,6 +479,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that empty intervals give no rows.
     fn empty_intervals_give_no_rows() {
         let cs = build_kuhn(&HashMap::new());
         assert_eq!(cs.nrows, 0);
@@ -458,6 +491,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that wide intervals are vacuous.
     fn wide_intervals_are_vacuous() {
         let mut m = HashMap::new();
         let sf = compile_kuhn(1);
@@ -468,6 +502,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that contains true opponent.
     fn contains_true_opponent() {
         let cs = build_kuhn(&uniform_intervals(0.1));
         assert!(cs.nrows > 0);
@@ -481,6 +516,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that excludes inconsistent plan.
     fn excludes_inconsistent_plan() {
         let cs = build_kuhn(&uniform_intervals(0.1));
         let sf = compile_kuhn(1);
@@ -498,6 +534,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that rhs is zero.
     fn rhs_is_zero() {
         let cs = build_kuhn(&uniform_intervals(0.2));
         assert!(cs.h.iter().all(|&v| v == 0.0));
@@ -505,6 +542,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that public set contains aggregate consistent opponent.
     fn public_set_contains_aggregate_consistent_opponent() {
         let sf = compile_kuhn(1);
         let mut groups: HashMap<String, Vec<String>> = HashMap::new();
@@ -528,6 +566,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that public set is looser than full for offsetting leaks.
     fn public_set_is_looser_than_full_for_offsetting_leaks() {
         let sf = compile_kuhn(1);
         let mut behavior = HashMap::new();
@@ -567,6 +606,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that weighted public aggregate changes the constraint.
     fn weighted_public_aggregate_changes_the_constraint() {
         let sf = compile_kuhn(1);
         let mut groups: HashMap<String, Vec<String>> = HashMap::new();
@@ -603,6 +643,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that opponent reach weights are positive under a mixed agent.
     fn opponent_reach_weights_are_positive_under_a_mixed_agent() {
         use crate::kuhn::Kuhn;
 

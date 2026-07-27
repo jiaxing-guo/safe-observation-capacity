@@ -1,4 +1,4 @@
-""
+"""Inspect reveal lines. See supplementary Reproducibility for its role in the release workflow."""
 
 import sys
 
@@ -15,6 +15,7 @@ from scripts.poker import run_safe_active_decensoring as D
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     D._init()
     sf1, y_eq = D._W["sf1"], D._W["y_eq"]
     by_hist: dict[str, dict] = {}

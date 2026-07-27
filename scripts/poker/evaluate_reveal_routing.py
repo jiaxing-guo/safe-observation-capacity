@@ -1,4 +1,4 @@
-""
+"""Evaluate the reveal routing experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -21,13 +21,14 @@ OUT = Path(os.environ.get("REVEAL_ROUTING_OUT", f"results/reveal_routing_{GAME}.
 
 
 def _is_river(label: str) -> bool:
+    """Compute is river for the evaluate reveal routing workflow."""
     return "/" in (label.split("|", 1)[1] if "|" in label else "")
 
 
 def _behav_signal(
     sf1, behavior, eq, omega, fold_idx, restrict: str | None = None
 ) -> float:
-    ""
+    """Compute behav signal for the evaluate reveal routing workflow."""
     total = 0.0
     for info in sf1.info_sets:
         w = omega.get(info.label, 0.0)
@@ -64,7 +65,7 @@ def _fold_pub_signal(
     info_by_label,
     restrict: str | None = None,
 ) -> float:
-    ""
+    """Compute fold pub signal for the evaluate reveal routing workflow."""
     total = 0.0
     for _key, members in groups.items():
         if restrict == "turn" and _is_river(members[0]):
@@ -92,6 +93,7 @@ def _fold_pub_signal(
 
 
 def _gate_curve(signal: list[float], lift: list[float]) -> list[dict[str, Any]]:
+    """Compute gate curve for the evaluate reveal routing workflow."""
     available = sum(lift)
     curve: list[dict[str, Any]] = []
     for tau in sorted({0.0, *signal}):
@@ -108,12 +110,13 @@ def _gate_curve(signal: list[float], lift: list[float]) -> list[dict[str, Any]]:
 
 
 def _knee(curve: list[dict[str, Any]], target: float = 0.9) -> dict[str, Any] | None:
-    ""
+    """Compute knee for the evaluate reveal routing workflow."""
     feasible = [pt for pt in curve if pt["captured_frac"] >= target]
     return min(feasible, key=lambda pt: pt["solve_rate"]) if feasible else None
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     print(
         f"# C_obs GATE-2 test (Q4b, fold/value-aware signal panel)  game={game}  rho={RHO}",

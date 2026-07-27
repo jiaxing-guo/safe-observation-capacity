@@ -1,4 +1,4 @@
-""
+"""Regression tests for test goofspiel. See the corresponding implementation module and supplementary Reproducibility."""
 
 import math
 
@@ -18,12 +18,14 @@ GOOFSPIEL_INFOSETS = 46
 
 
 def test_goofspiel_sequence_form_sizes_are_symmetric():
+    """Verify that goofspiel sequence form sizes are symmetric."""
     n_seq1, n_info1, n_seq2, n_info2 = native.sequence_form_sizes("goofspiel")
     assert (n_seq1, n_info1) == (GOOFSPIEL_SEQUENCES, GOOFSPIEL_INFOSETS)
     assert (n_seq2, n_info2) == (GOOFSPIEL_SEQUENCES, GOOFSPIEL_INFOSETS)
 
 
 def test_goofspiel_value_is_zero_by_symmetry():
+    """Verify that goofspiel value is zero by symmetry."""
     value, realization = native.blueprint_lp("goofspiel")
 
     assert math.isclose(value, 0.0, abs_tol=1e-6)
@@ -31,6 +33,7 @@ def test_goofspiel_value_is_zero_by_symmetry():
 
 
 def test_goofspiel_blueprint_is_safe_at_the_floor():
+    """Verify that goofspiel blueprint is safe at the floor."""
     bp = solve_blueprint("goofspiel", method="lp")
     assert math.isclose(bp.value, 0.0, abs_tol=1e-6)
 
@@ -39,7 +42,7 @@ def test_goofspiel_blueprint_is_safe_at_the_floor():
 
 
 def test_goofspiel_lowball_is_exploitable_highball_is_not():
-
+    """Verify that goofspiel lowball is exploitable highball is not."""
     low = best_response(goofspiel_lowball_opponent().realization(), game="goofspiel")
     high = best_response(goofspiel_highball_opponent().realization(), game="goofspiel")
     assert low.value > 0.5
@@ -50,6 +53,7 @@ def test_goofspiel_lowball_is_exploitable_highball_is_not():
 
 
 def test_goofspiel_online_exploits_lowball_safely():
+    """Verify that goofspiel online exploits lowball safely."""
     res = run_online_adaptation(
         goofspiel_lowball_opponent(),
         rounds=20,
@@ -66,6 +70,7 @@ def test_goofspiel_online_exploits_lowball_safely():
 
 
 def test_goofspiel_online_against_equilibrium_stays_safe():
+    """Verify that goofspiel online against equilibrium stays safe."""
     res = run_online_adaptation(
         goofspiel_equilibrium_opponent(),
         rounds=20,
@@ -80,6 +85,7 @@ def test_goofspiel_online_against_equilibrium_stays_safe():
 
 
 def test_goofspiel_suite_is_well_formed():
+    """Verify that goofspiel suite is well formed."""
     suite = goofspiel_opponent_suite()
     assert set(suite) == {"equilibrium", "lowball", "highball", "uniform"}
     for opp in suite.values():
@@ -93,7 +99,7 @@ def test_goofspiel_suite_is_well_formed():
 
 
 def test_goofspiel_uniform_is_mildly_exploitable():
-
+    """Verify that goofspiel uniform is mildly exploitable."""
     uni = best_response(goofspiel_uniform_opponent().realization(), game="goofspiel")
     low = best_response(goofspiel_lowball_opponent().realization(), game="goofspiel")
     assert 0.0 < uni.value < low.value

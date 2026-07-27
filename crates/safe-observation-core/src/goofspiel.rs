@@ -1,19 +1,25 @@
+//! Goofspiel algorithms for safe observation. See supplementary Reproducibility for its role in the release workflow.
+
 use std::cmp::Ordering;
 
 use crate::game::{Game, Node};
 
+/// Defines the n constant.
 pub const N: usize = 3;
 
+/// Computes prize.
 const fn prize(round: usize) -> i32 {
     (N - round) as i32
 }
 
+/// Computes card char.
 fn card_char(v: usize) -> char {
     debug_assert!((1..=9).contains(&v));
     char::from(b'0' + v as u8)
 }
 
 #[derive(Clone)]
+/// Stores state for goofspiel state.
 pub struct GoofspielState {
     round: usize,
 
@@ -28,17 +34,23 @@ pub struct GoofspielState {
     hist: String,
 }
 
+/// Stores state for goofspiel.
 pub struct Goofspiel;
 
+/// Implements operations for `Goofspiel`.
 impl Goofspiel {
+    /// Computes information set.
     fn infoset(player: usize, history: &str) -> String {
         format!("{player}|{history}")
     }
 }
 
+/// Implements operations for `Goofspiel`.
 impl Game for Goofspiel {
+    /// Aliases the type used for state.
     type State = GoofspielState;
 
+    /// Return the initial game state.
     fn root(&self) -> GoofspielState {
         let full = (1u16 << N) - 1;
         GoofspielState {
@@ -51,6 +63,7 @@ impl Game for Goofspiel {
         }
     }
 
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &GoofspielState) -> Node<GoofspielState> {
         if s.round >= N {
             return Node::Terminal(s.diff as f64);
@@ -98,14 +111,17 @@ impl Game for Goofspiel {
     }
 }
 
+/// Compile goofspiel.
 pub fn compile_goofspiel(player: usize) -> crate::sequence_form::SequenceForm {
     crate::sequence_form::compile(&Goofspiel, player)
 }
 
+/// Build goofspiel.
 pub fn build_goofspiel() -> crate::payoff::PayoffMatrix {
     crate::payoff::build(&Goofspiel, &compile_goofspiel(0), &compile_goofspiel(1))
 }
 
+/// Solve blueprint goofspiel.
 pub fn solve_blueprint_goofspiel() -> crate::lp::BlueprintSolution {
     crate::lp::solve_blueprint(
         &compile_goofspiel(0),
@@ -114,18 +130,21 @@ pub fn solve_blueprint_goofspiel() -> crate::lp::BlueprintSolution {
     )
 }
 
+/// Computes sizes.
 pub fn sizes(player: usize) -> (usize, usize) {
     let sf = compile_goofspiel(player);
     (sf.num_sequences(), sf.num_infosets())
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::lp::{best_response_p1, safety_verify, solve_blueprint};
     use crate::payoff::PayoffMatrix;
 
     #[test]
+    /// Verifies that prizes are descending and sum to triangular.
     fn prizes_are_descending_and_sum_to_triangular() {
         let total: i32 = (0..N).map(prize).sum();
         assert_eq!(total, (N * (N + 1) / 2) as i32);
@@ -134,18 +153,21 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that sequence form sizes are symmetric.
     fn sequence_form_sizes_are_symmetric() {
         assert_eq!(sizes(0), (58, 46));
         assert_eq!(sizes(1), (58, 46));
     }
 
     #[test]
+    /// Verifies that blueprint value is zero by symmetry.
     fn blueprint_value_is_zero_by_symmetry() {
         let v = solve_blueprint_goofspiel().value;
         assert!(v.abs() < 1e-6, "Goofspiel value {v} != 0");
     }
 
     #[test]
+    /// Verifies that blueprint is an exact Nash zero exploitability.
     fn blueprint_is_an_exact_nash_zero_exploitability() {
         let sf0 = compile_goofspiel(0);
         let sf1 = compile_goofspiel(1);
@@ -185,6 +207,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that uniform vs uniform has value zero by symmetry.
     fn uniform_vs_uniform_has_value_zero_by_symmetry() {
         let sf0 = compile_goofspiel(0);
         let sf1 = compile_goofspiel(1);

@@ -1,4 +1,4 @@
-""
+"""Run the baselines experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import multiprocessing as mp
@@ -53,7 +53,7 @@ _WORKER: dict = {}
 
 
 def _init_worker(game: str) -> None:
-    ""
+    """Initialize process-local state for a parallel worker."""
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
     sf1 = compile_game(game, 1)
@@ -79,7 +79,7 @@ def _init_worker(game: str) -> None:
 
 
 def _dbr_rows(sf1, show, p_em, k_prior=10.0, p_cap=0.95):
-    ""
+    """Compute dbr rows for the run baselines workflow."""
     entries, h, meta = [], [], []
     for info in sf1.info_sets:
         counts = show.get(info.label)
@@ -103,7 +103,7 @@ def _dbr_rows(sf1, show, p_em, k_prior=10.0, p_cap=0.95):
 
 
 def _run_cell(task: tuple[str, int]) -> dict:
-    ""
+    """Run the cell experiment for the run baselines workflow."""
     name, seed = task
     g = _WORKER
     game, payoff, sf1 = g["game"], g["payoff"], g["sf1"]
@@ -170,6 +170,7 @@ def _run_cell(task: tuple[str, int]) -> dict:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     t_start = time.time()
     game = GAME
 

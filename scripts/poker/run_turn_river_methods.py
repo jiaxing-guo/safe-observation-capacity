@@ -1,4 +1,4 @@
-""
+"""Run the turn river methods experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -35,10 +35,12 @@ _RANK = {c: i for i, c in enumerate("23456789TJQKA")}
 
 
 def _top_rank(hole: str) -> int:
+    """Compute top rank for the run turn river methods workflow."""
     return max(_RANK[hole[0]], _RANK[hole[2]])
 
 
 def _perturb(base, actions, pick, target, weight):
+    """Compute perturb for the run turn river methods workflow."""
     out = {label: list(dist) for label, dist in base.items()}
     for label, dist in base.items():
         hole, hist = label.split("|", 1)
@@ -57,13 +59,16 @@ def _perturb(base, actions, pick, target, weight):
 
 
 def _build_opponents(game, actions):
+    """Build opponents for the run turn river methods workflow."""
     eq = holdem_equilibrium_opponent(game).behavior
 
     def river_fold(label):
+        """Compute river fold for the run turn river methods workflow."""
         hist = label.split("|", 1)[1]
         return "/" in hist and "f" in actions[label]
 
     def turn_fold(label):
+        """Compute turn fold for the run turn river methods workflow."""
         hist = label.split("|", 1)[1]
         return "/" not in hist and "f" in actions[label]
 
@@ -86,6 +91,7 @@ def _build_opponents(game, actions):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
@@ -152,6 +158,7 @@ def main() -> None:
         )
 
         def realized(resp, y=y_star):
+            """Evaluate a realization plan against the selected opponent."""
             return payoff.bilinear(list(resp.realization), y) - v_ref
 
         g_core = realized(core)

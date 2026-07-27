@@ -1,3 +1,5 @@
+//! Payoff algorithms for safe observation. See Preliminaries and Problem Setup.
+
 use std::collections::BTreeMap;
 
 use ndarray::Array2;
@@ -6,6 +8,7 @@ use crate::game::{Game, Node};
 use crate::kuhn::Kuhn;
 use crate::sequence_form::{compile_kuhn, SequenceForm};
 
+/// Stores state for payoff matrix.
 pub struct PayoffMatrix {
     pub nrows: usize,
 
@@ -14,11 +17,14 @@ pub struct PayoffMatrix {
     pub entries: Vec<(usize, usize, f64)>,
 }
 
+/// Implements operations for `PayoffMatrix`.
 impl PayoffMatrix {
+    /// Computes nnz.
     pub fn nnz(&self) -> usize {
         self.entries.len()
     }
 
+    /// Computes dense.
     pub fn dense(&self) -> Array2<f64> {
         let mut a = Array2::<f64>::zeros((self.nrows, self.ncols));
         for &(r, c, v) in &self.entries {
@@ -27,6 +33,7 @@ impl PayoffMatrix {
         a
     }
 
+    /// Computes matvec a y.
     pub fn matvec_a_y(&self, y: &[f64]) -> Vec<f64> {
         let mut out = vec![0.0; self.nrows];
         for &(r, c, v) in &self.entries {
@@ -35,6 +42,7 @@ impl PayoffMatrix {
         out
     }
 
+    /// Computes matvec at x.
     pub fn matvec_at_x(&self, x: &[f64]) -> Vec<f64> {
         let mut out = vec![0.0; self.ncols];
         for &(r, c, v) in &self.entries {
@@ -43,12 +51,14 @@ impl PayoffMatrix {
         out
     }
 
+    /// Computes bilinear.
     pub fn bilinear(&self, x: &[f64], y: &[f64]) -> f64 {
         self.entries.iter().map(|&(r, c, v)| x[r] * v * y[c]).sum()
     }
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Computes terminal walk.
 fn terminal_walk<G: Game, F: FnMut(usize, usize, f64)>(
     game: &G,
     state: &G::State,
@@ -87,6 +97,7 @@ fn terminal_walk<G: Game, F: FnMut(usize, usize, f64)>(
     }
 }
 
+/// Build the configured game or confidence object.
 pub fn build<G: Game>(game: &G, sf0: &SequenceForm, sf1: &SequenceForm) -> PayoffMatrix {
     let mut acc: BTreeMap<(usize, usize), f64> = BTreeMap::new();
     terminal_walk(
@@ -109,6 +120,7 @@ pub fn build<G: Game>(game: &G, sf0: &SequenceForm, sf1: &SequenceForm) -> Payof
     }
 }
 
+/// Apply a y.
 pub fn apply_a_y<G: Game>(game: &G, sf0: &SequenceForm, sf1: &SequenceForm, y: &[f64]) -> Vec<f64> {
     let mut out = vec![0.0; sf0.num_sequences()];
     terminal_walk(
@@ -126,6 +138,7 @@ pub fn apply_a_y<G: Game>(game: &G, sf0: &SequenceForm, sf1: &SequenceForm, y: &
     out
 }
 
+/// Apply at x.
 pub fn apply_at_x<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -148,19 +161,23 @@ pub fn apply_at_x<G: Game>(
     out
 }
 
+/// Build Kuhn.
 pub fn build_kuhn() -> PayoffMatrix {
     build(&Kuhn, &compile_kuhn(0), &compile_kuhn(1))
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use std::collections::HashMap;
 
     use super::*;
     use crate::kuhn::{deals, is_terminal, terminal_value_p1};
 
+    /// Defines the symbols constant.
     const SYMBOLS: [char; 2] = ['p', 'b'];
 
+    /// Compute the expected value.
     fn expected_value(
         b0: &HashMap<String, [f64; 2]>,
         b1: &HashMap<String, [f64; 2]>,
@@ -189,6 +206,7 @@ mod tests {
         value
     }
 
+    /// Computes reference total.
     fn reference_total(b0: &HashMap<String, [f64; 2]>, b1: &HashMap<String, [f64; 2]>) -> f64 {
         deals()
             .iter()
@@ -196,11 +214,13 @@ mod tests {
             .sum()
     }
 
+    /// Converts the value to vec map.
     fn to_vec_map(m: &HashMap<String, [f64; 2]>) -> HashMap<String, Vec<f64>> {
         m.iter().map(|(k, v)| (k.clone(), v.to_vec())).collect()
     }
 
     #[test]
+    /// Verifies that shape and nnz.
     fn shape_and_nnz() {
         let a = build_kuhn();
         assert_eq!(a.nrows, 13);
@@ -210,6 +230,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that bilinear matches uniform reference.
     fn bilinear_matches_uniform_reference() {
         let a = build_kuhn();
         let sf0 = compile_kuhn(0);
@@ -221,6 +242,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that bilinear matches asymmetric reference.
     fn bilinear_matches_asymmetric_reference() {
         let a = build_kuhn();
         let sf0 = compile_kuhn(0);
@@ -244,6 +266,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that terminal payoff matrix entries.
     fn terminal_payoff_matrix_entries() {
         let a = build_kuhn();
         let sf0 = compile_kuhn(0);
@@ -264,6 +287,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that matvec consistent with bilinear.
     fn matvec_consistent_with_bilinear() {
         let a = build_kuhn();
         let sf0 = compile_kuhn(0);
@@ -280,6 +304,7 @@ mod tests {
         assert!((dot_atxy - a.bilinear(&x, &y)).abs() < 1e-12);
     }
 
+    /// Computes pseudo vec.
     fn pseudo_vec(n: usize, seed: u64) -> Vec<f64> {
         let mut s = seed;
         (0..n)
@@ -292,6 +317,7 @@ mod tests {
             .collect()
     }
 
+    /// Computes assert oracle matches.
     fn assert_oracle_matches<G: Game>(game: &G, sf0: &SequenceForm, sf1: &SequenceForm) {
         let a = build(game, sf0, sf1);
         let y = pseudo_vec(sf1.num_sequences(), 0x51ED);
@@ -313,17 +339,20 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that oracle matches materialized Kuhn.
     fn oracle_matches_materialized_kuhn() {
         assert_oracle_matches(&Kuhn, &compile_kuhn(0), &compile_kuhn(1));
     }
 
     #[test]
+    /// Verifies that oracle matches materialized Leduc.
     fn oracle_matches_materialized_leduc() {
         use crate::leduc::{compile_leduc, Leduc};
         assert_oracle_matches(&Leduc, &compile_leduc(0), &compile_leduc(1));
     }
 
     #[test]
+    /// Verifies that oracle matches materialized goofspiel.
     fn oracle_matches_materialized_goofspiel() {
         use crate::goofspiel::Goofspiel;
         use crate::sequence_form::compile;

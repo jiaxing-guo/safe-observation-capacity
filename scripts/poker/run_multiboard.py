@@ -1,4 +1,4 @@
-""
+"""Run the multiboard experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -35,6 +35,7 @@ CORE, POINT, SAD = "public_robust", "point_response", "safe_active_decensoring"
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     boards_out = []
     for game in BOARDS:
         full = holdem_showdown_opponent_suite(game)

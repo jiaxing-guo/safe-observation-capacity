@@ -1,4 +1,4 @@
-""
+"""Check fisher information. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ N_MC = 4_000_000
 
 
 def _loglik(theta, b, z, q_fn, sigma):
+    """Compute loglik for the check fisher information workflow."""
     q = q_fn(theta)
 
     log_phi = -0.5 * ((z - theta) / sigma) ** 2 - np.log(sigma * np.sqrt(2 * np.pi))
@@ -18,7 +19,7 @@ def _loglik(theta, b, z, q_fn, sigma):
 
 
 def fisher_mc(q_fn, sigma, theta0, n=N_MC, h=1e-4):
-    ""
+    """Compute fisher mc for the check fisher information workflow."""
     q = q_fn(theta0)
     b = (RNG.random(n) < q).astype(float)
     z = np.where(
@@ -32,6 +33,7 @@ def fisher_mc(q_fn, sigma, theta0, n=N_MC, h=1e-4):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     I_R = 1.0 / SIGMA**2
     print(f"# Gaussian reveal: I_R = 1/sigma^2 = {I_R:.4f}\n")
     print(
@@ -41,6 +43,7 @@ def main() -> None:
     for qc in [0.05, 0.2, 0.5]:
 
         def q_fn(t, qc=qc):
+            """Compute q fn for the check fisher information workflow."""
             return qc + 0.0 * t
 
         Imc = fisher_mc(q_fn, SIGMA, THETA0)
@@ -55,6 +58,7 @@ def main() -> None:
     for qc, slope in [(0.2, 0.3), (0.2, 0.6), (0.5, 0.5)]:
 
         def q_fn(t, qc=qc, slope=slope):
+            """Compute q fn for the check fisher information workflow."""
             return qc + slope * t
 
         q_at = q_fn(THETA0)

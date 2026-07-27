@@ -1,4 +1,4 @@
-""
+"""Run the identification coverage experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 from pathlib import Path
@@ -18,7 +18,7 @@ from scripts.poker import run_safe_active_decensoring as D
 
 
 def _probe_for(name: str):
-    ""
+    """Compute probe for for the run identification coverage workflow."""
     behavior = D._W["suite"][name]
     y_star = list(Opponent(name=name, behavior=behavior, game=GAME).realization())
     weights = D._public_anomaly_weights(y_star)
@@ -28,7 +28,7 @@ def _probe_for(name: str):
 
 
 def _committing_pins(agent_behavior):
-    ""
+    """Compute committing pins for the run identification coverage workflow."""
     sf1, fold_idx = D._W["sf1"], D._W["fold_idx"]
     agent_real = D._W["sf0"].realization_from_behavior(agent_behavior)
     sd_reach = D.agent_showdown_reach(agent_real, game=GAME)
@@ -50,7 +50,7 @@ def _committing_pins(agent_behavior):
 
 
 def _passive_pins(y_star):
-    ""
+    """Compute passive pins for the run identification coverage workflow."""
     sf1, fold_idx = D._W["sf1"], D._W["fold_idx"]
     bp_real = D._W["sf0"].realization_from_behavior(D._W["bp_behavior"])
     omega = D.opponent_reach_weights(bp_real, game=GAME)
@@ -67,6 +67,7 @@ def _passive_pins(y_star):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     D._init()
     out: dict[str, dict] = {}
     print(f"# Q5 C_id coverage/width  game={GAME}  seeds={N_SEEDS}", flush=True)
@@ -133,6 +134,7 @@ def main() -> None:
                 pcov_s.append(pcov / ptot if ptot else 1.0)
 
             def _ms(xs):
+                """Compute ms for the run identification coverage workflow."""
                 m = statistics.mean(xs)
                 se = statistics.stdev(xs) / len(xs) ** 0.5 if len(xs) > 1 else 0.0
                 return m, se

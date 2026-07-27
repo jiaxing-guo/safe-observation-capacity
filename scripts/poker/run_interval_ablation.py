@@ -1,4 +1,4 @@
-""
+"""Run the interval ablation experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import math
@@ -20,17 +20,19 @@ SEEDS = tuple(range(42, 67))
 
 
 def _mean_halfwidth(intervals) -> float:
+    """Compute mean halfwidth for the run interval ablation workflow."""
     widths = [(hi - lo) / 2.0 for bounds in intervals.values() for (lo, hi) in bounds]
     return sum(widths) / len(widths) if widths else 0.0
 
 
 def _min_halfwidth(intervals) -> float:
-
+    """Compute min halfwidth for the run interval ablation workflow."""
     widths = [(hi - lo) / 2.0 for bounds in intervals.values() for (lo, hi) in bounds]
     return min(widths) if widths else 0.0
 
 
 def _inside(game, groups, intervals, weights, y_star) -> bool:
+    """Return whether the estimate lies inside the supplied interval."""
     grp = {k: list(v) for k, v in groups.items()}
     payload = {k: [tuple(b) for b in bd] for k, bd in intervals.items()}
     cset = native.ConfidenceSet.from_public(game, grp, payload, weights)
@@ -38,6 +40,7 @@ def _inside(game, groups, intervals, weights, y_star) -> bool:
 
 
 def run_opponent(game, opp, weights) -> dict:
+    """Construct the run opponent policy."""
     y_star = list(opp.realization())
     blueprint_behavior = compile_game(game, 0).behavior_from_realization(
         native.blueprint_realization(game, 0)
@@ -94,6 +97,7 @@ def run_opponent(game, opp, weights) -> dict:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = "holdem"
     suite = holdem_showdown_opponent_suite(game=game)
     by_name = {o.name: o for o in suite.values()}

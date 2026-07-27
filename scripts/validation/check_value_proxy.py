@@ -1,4 +1,4 @@
-""
+"""Check value proxy. See supplementary Reproducibility for its role in the release workflow."""
 
 import sys
 
@@ -19,14 +19,14 @@ DEV = ["river_overfold_w80", "turn_overfold_w70", "revealed_call_strong"]
 
 
 def _leverage() -> list[float]:
-    ""
+    """Compute leverage for the check value proxy workflow."""
     bp = D.solve_blueprint(GAME, method="lp")
     atx = D._W["payoff"].matvec_at_x(list(bp.realization))
     return [abs(v) for v in atx]
 
 
 def _value_anomaly_weights(y_ref: list[float], lev: list[float]) -> dict[str, float]:
-    ""
+    """Compute weights for value anomaly."""
     sf1, omega_bp, y_eq = D._W["sf1"], D._W["omega_bp"], D._W["y_eq"]
     by_hist: dict[str, list] = {}
     for info in sf1.info_sets:
@@ -70,7 +70,7 @@ def _value_anomaly_weights(y_ref: list[float], lev: list[float]) -> dict[str, fl
 
 
 def _target_leverage(lev: list[float]) -> dict[str, float]:
-    ""
+    """Compute target leverage for the check value proxy workflow."""
     sf1, fold_idx = D._W["sf1"], D._W["fold_idx"]
     out: dict[str, float] = {}
     for info in sf1.info_sets:
@@ -88,7 +88,7 @@ def _target_leverage(lev: list[float]) -> dict[str, float]:
 
 
 def _reach(weights: dict[str, float]) -> dict[str, float]:
-    ""
+    """Compute reach for the check value proxy workflow."""
     if not weights:
         return {}
     beh = D._build_probe_behavior(weights)
@@ -97,11 +97,13 @@ def _reach(weights: dict[str, float]) -> dict[str, float]:
 
 
 def _spearman(a: dict[str, float], b: dict[str, float]) -> float:
+    """Compute Spearman rank correlation between two score vectors."""
     keys = sorted(set(a) | set(b))
     if len(keys) < 3:
         return float("nan")
 
     def ranks(d):
+        """Assign average ranks while preserving tied values."""
         vals = [d.get(k, 0.0) for k in keys]
         order = sorted(range(len(vals)), key=lambda i: vals[i])
         r = [0.0] * len(vals)
@@ -119,6 +121,7 @@ def _spearman(a: dict[str, float], b: dict[str, float]) -> float:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     D._init()
     lev = _leverage()
     tlev = _target_leverage(lev)

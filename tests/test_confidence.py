@@ -1,4 +1,4 @@
-""
+"""Regression tests for test confidence. See the corresponding implementation module and supplementary Reproducibility."""
 
 import math
 import random
@@ -15,16 +15,19 @@ from safe_observation.confidence import (
 
 
 def test_halfwidth_matches_formula():
+    """Verify that halfwidth matches formula."""
     n, delta = 100, 0.05
     expected = math.sqrt(math.log(2.0 / delta) / (2.0 * n))
     assert math.isclose(hoeffding_halfwidth(n, delta), expected)
 
 
 def test_halfwidth_no_samples_is_maximal():
+    """Verify that halfwidth no samples is maximal."""
     assert hoeffding_halfwidth(0, 0.05) == 1.0
 
 
 def test_interval_contains_and_clips():
+    """Verify that interval contains and clips."""
     lo, hi = hoeffding_interval(0.5, 100, 0.05)
     assert 0.0 <= lo < 0.5 < hi <= 1.0
     assert hoeffding_interval(0.0, 10, 0.05)[0] == 0.0
@@ -32,6 +35,7 @@ def test_interval_contains_and_clips():
 
 
 def test_invalid_delta_raises():
+    """Verify that invalid delta raises."""
     with pytest.raises(ValueError):
         hoeffding_halfwidth(10, 0.0)
     with pytest.raises(ValueError):
@@ -39,6 +43,7 @@ def test_invalid_delta_raises():
 
 
 def test_bernstein_matches_formula():
+    """Verify that bernstein matches formula."""
     n, var, delta = 200, 0.21, 0.05
     ln = math.log(3.0 / delta)
     expected = math.sqrt(2.0 * var * ln / n) + 3.0 * ln / n
@@ -46,7 +51,7 @@ def test_bernstein_matches_formula():
 
 
 def test_bernstein_tighter_than_hoeffding_for_low_variance():
-
+    """Verify that bernstein tighter than hoeffding for low variance."""
     n, delta = 500, 0.05
     eb = empirical_bernstein_interval(0.02, n, delta)
     ho = hoeffding_interval(0.02, n, delta)
@@ -54,10 +59,12 @@ def test_bernstein_tighter_than_hoeffding_for_low_variance():
 
 
 def test_bernstein_no_samples_is_maximal():
+    """Verify that bernstein no samples is maximal."""
     assert empirical_bernstein_halfwidth(0, 0.25, 0.05) == 1.0
 
 
 def test_evidence_store_counts_and_phat():
+    """Verify that evidence store counts and phat."""
     store = OpponentEvidenceStore.for_kuhn()
     assert len(store.labels) == 6
 
@@ -73,12 +80,14 @@ def test_evidence_store_counts_and_phat():
 
 
 def test_evidence_store_record_validates_length():
+    """Verify that evidence store record validates length."""
     store = OpponentEvidenceStore.for_kuhn()
     with pytest.raises(ValueError):
         store.record(store.labels[0], [1, 2, 3])
 
 
 def test_union_bound_widens_intervals():
+    """Verify that union bound widens intervals."""
     store = OpponentEvidenceStore.for_kuhn()
     for label in store.labels:
         store.record(label, [50, 50])
@@ -91,7 +100,7 @@ def test_union_bound_widens_intervals():
 
 
 def test_confidence_intervals_contain_true_opponent():
-
+    """Verify that confidence intervals contain true opponent."""
     rng = random.Random(2026)
     true_p, n, delta, trials = 0.3, 200, 0.1, 2000
     covered = 0

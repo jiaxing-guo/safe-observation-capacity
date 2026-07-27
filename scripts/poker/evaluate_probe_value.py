@@ -1,4 +1,4 @@
-""
+"""Evaluate the probe value experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -18,10 +18,14 @@ LEAK = sys.argv[1] if len(sys.argv) > 1 else "both"
 
 
 def _leak(eq, actions, which):
+    """Compute leak for the evaluate probe value workflow."""
+
     def turn(h, hist, acts):
+        """Compute turn for the evaluate probe value workflow."""
         return "/" not in hist and "f" in acts and _top_rank(h) >= 9
 
     def river(h, hist, acts):
+        """Compute river for the evaluate probe value workflow."""
         return "/" in hist and "f" in acts and _top_rank(h) >= 9
 
     out = eq
@@ -33,6 +37,7 @@ def _leak(eq, actions, which):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf1 = compile_game(GAME, 1)
     payoff = build_payoff(GAME)
     bp = solve_blueprint(GAME, method="lp")

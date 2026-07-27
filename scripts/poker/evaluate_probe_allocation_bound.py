@@ -1,4 +1,4 @@
-""
+"""Evaluate the probe allocation bound experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ RHO = 0.3
 
 
 def _facing_bet_targets(sf1):
-    ""
+    """Compute facing bet targets for the evaluate probe allocation bound workflow."""
     fold_chars = {"p", "f"}
     call_chars = {"b", "c"}
     out = {}
@@ -37,16 +37,17 @@ def _facing_bet_targets(sf1):
 
 
 def _real(beh):
+    """Compute real for the evaluate probe allocation bound workflow."""
     return list(Opponent(name="x", behavior=beh, game=GAME).realization())
 
 
 def _base_behavior(sf1):
-    ""
+    """Compute base behavior for the evaluate probe allocation bound workflow."""
     return {i.label: [1.0 / len(i.children)] * len(i.children) for i in sf1.info_sets}
 
 
 def _public_key(label: str) -> str:
-    ""
+    """Compute public key for the evaluate probe allocation bound workflow."""
     if ":" in label and "|" not in label:
         return label.split(":", 1)[1]
     if "|" in label:
@@ -55,7 +56,7 @@ def _public_key(label: str) -> str:
 
 
 def _reveal_lambda(sf1, label, fi, ci, x_real):
-    ""
+    """Compute reveal lambda for the evaluate probe allocation bound workflow."""
     sd = agent_showdown_reach(x_real, game=GAME)
     row = sd.get(label)
     if row is None or ci >= len(row):
@@ -65,6 +66,7 @@ def _reveal_lambda(sf1, label, fi, ci, x_real):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf1 = compile_game(GAME, 1)
     payoff = build_payoff(GAME)
     bp = solve_blueprint(GAME, method="lp")

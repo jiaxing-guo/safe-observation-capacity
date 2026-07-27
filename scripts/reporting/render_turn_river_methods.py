@@ -1,4 +1,4 @@
-""
+"""Render turn river methods. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -31,6 +31,7 @@ RHO_ORDER = [0.1, 0.5]
 
 
 def _stats(aggregate: list[dict], opponent: str, rho: float, metric: str) -> dict:
+    """Compute summary statistics across independent replicates."""
     for row in aggregate:
         if row["opponent"] == opponent and abs(float(row["rho"]) - rho) < 1e-9:
             return row["metrics"][metric]
@@ -38,18 +39,21 @@ def _stats(aggregate: list[dict], opponent: str, rho: float, metric: str) -> dic
 
 
 def _fmt_pm(stats: dict) -> str:
+    """Compute fmt pm for the render turn river methods workflow."""
     mean = float(stats["mean"])
     ci = float(stats["ci95"])
     return f"${mean:+.3f}\\pm{ci:.3f}$"
 
 
 def _fmt_plain(value: float) -> str:
+    """Compute fmt plain for the render turn river methods workflow."""
     if abs(value) < 5e-6:
         value = 0.0
     return f"${value:+.3f}$"
 
 
 def _row(aggregate: list[dict], opponent: str, rho: float) -> str:
+    """Format one result row for the generated report."""
     label = OPPONENT_LABELS[opponent]
     oracle = _fmt_pm(_stats(aggregate, opponent, rho, "oracle"))
     core = _fmt_pm(_stats(aggregate, opponent, rho, "core"))
@@ -65,6 +69,7 @@ def _row(aggregate: list[dict], opponent: str, rho: float) -> str:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     data = json.load(IN_JSON.open())
     aggregate = data["aggregate"]
     body = "\n".join(

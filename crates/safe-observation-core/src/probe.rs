@@ -1,8 +1,11 @@
+//! Probe algorithms for safe observation. See Safe Active De-censoring and supplementary Algorithms.
+
 use std::collections::HashMap;
 
 use crate::game::{Game, Node};
 use crate::sequence_form::{InfoSet, SequenceForm};
 
+/// Compute coefficients for probe reach.
 pub fn probe_reach_coeffs<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -27,6 +30,7 @@ pub fn probe_reach_coeffs<G: Game>(
     c
 }
 
+/// Traverse the game tree while accumulating reach contributions.
 struct Walk<'a, G: Game> {
     game: &'a G,
     by_label: &'a HashMap<&'a str, &'a InfoSet>,
@@ -35,7 +39,9 @@ struct Walk<'a, G: Game> {
     c: &'a mut [f64],
 }
 
+/// Implements operations for `Walk<'_, G>`.
 impl<G: Game> Walk<'_, G> {
+    /// Traverse the game tree while accumulating reach contributions.
     fn walk(&mut self, state: &G::State, agent_seq: usize, chance: f64, opp_reach: f64) {
         match self.game.node(state) {
             Node::Terminal(_) => {}
@@ -50,6 +56,7 @@ impl<G: Game> Walk<'_, G> {
                 actions,
             } => {
                 if player == 0 {
+                    // Agent actions advance the active realization sequence.
                     let info = self.by_label[infoset.as_str()];
                     for (ch, next) in &actions {
                         let child = info
@@ -61,6 +68,8 @@ impl<G: Game> Walk<'_, G> {
                         self.walk(next, child, chance, opp_reach);
                     }
                 } else {
+                    // Opponent nodes contribute before branching; continuation
+                    // probabilities affect only their descendants.
                     let w = self.weights.get(&infoset).copied().unwrap_or(0.0);
                     if w != 0.0 {
                         self.c[agent_seq] += chance * opp_reach * w;
@@ -81,11 +90,13 @@ impl<G: Game> Walk<'_, G> {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::kuhn::Kuhn;
     use crate::sequence_form::compile_kuhn;
 
+    /// Compute weights for all ones.
     fn all_ones_weights(sf1: &SequenceForm) -> HashMap<String, f64> {
         sf1.info_sets
             .iter()
@@ -94,6 +105,7 @@ mod tests {
     }
 
     #[allow(clippy::too_many_arguments)]
+    /// Compute information gain by direct scalar tree traversal.
     fn scalar_ig(
         game: &Kuhn,
         state: &<Kuhn as Game>::State,
@@ -173,6 +185,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that zero weights give zero coefficients.
     fn zero_weights_give_zero_coeffs() {
         let sf0 = compile_kuhn(0);
         let c = probe_reach_coeffs(&Kuhn, &sf0, &HashMap::new(), &HashMap::new());
@@ -181,6 +194,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that coefficients are nonnegative and some positive.
     fn coeffs_are_nonnegative_and_some_positive() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -191,6 +205,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that coefficients match direct scalar walk.
     fn coeffs_match_direct_scalar_walk() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);

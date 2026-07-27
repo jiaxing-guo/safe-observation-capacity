@@ -1,4 +1,4 @@
-""
+"""Run the safe active de-censoring experiment. See Safe Active De-censoring and supplementary Algorithms."""
 
 from concurrent.futures import TimeoutError as FuturesTimeoutError, as_completed
 import json
@@ -100,11 +100,12 @@ _W: dict[str, Any] = {}
 
 
 def _is_river(label: str) -> bool:
+    """Compute is river for the run safe active de-censoring workflow."""
     return "/" in (label.split("|", 1)[1] if "|" in label else "")
 
 
 def _try_solve(fn):
-    ""
+    """Compute try solve for the run safe active de-censoring workflow."""
     try:
         return fn()
     except (KeyboardInterrupt, SystemExit):
@@ -114,7 +115,7 @@ def _try_solve(fn):
 
 
 def _build_probe_behavior(weights: dict[str, float]) -> dict[str, list[float]]:
-    ""
+    """Build probe behavior for the run safe active de-censoring workflow."""
     sf0 = _W["sf0"]
     pr = robust_safe_response_probe(
         _W["triv_iv"],
@@ -132,6 +133,7 @@ def _build_probe_behavior(weights: dict[str, float]) -> dict[str, list[float]]:
 def _init(
     probes: dict[str, Any] | None = None, kappa: dict[str, float] | None = None
 ) -> None:
+    """Initialize process-local state for parallel experiment workers."""
     sf0 = compile_game(GAME, 0)
     sf1 = compile_game(GAME, 1)
     payoff = build_payoff(GAME)
@@ -209,7 +211,7 @@ def _init(
 
 
 def _public_anomaly_weights(y_ref: list[float]) -> dict[str, float]:
-    ""
+    """Compute weights for public anomaly."""
     sf1, omega_bp, y_eq = _W["sf1"], _W["omega_bp"], _W["y_eq"]
     by_hist: dict[str, list[Any]] = {}
     for info in sf1.info_sets:
@@ -251,7 +253,7 @@ def _public_anomaly_weights(y_ref: list[float]) -> dict[str, float]:
 
 
 def _leak_weights(y_star: list[float]) -> dict[str, float]:
-    ""
+    """Compute weights for leak for the run safe active de-censoring workflow."""
     sf1, fold_idx, y_eq = _W["sf1"], _W["fold_idx"], _W["y_eq"]
     w: dict[str, float] = {}
     for info in sf1.info_sets:
@@ -269,19 +271,19 @@ def _leak_weights(y_star: list[float]) -> dict[str, float]:
 
 
 def _kappa_weights() -> dict[str, float]:
-    ""
+    """Compute weights for kappa for the run safe active de-censoring workflow."""
     return {i: k for i, k in _W["kappa"].items() if k > 1e-9}
 
 
 def _dpub_kappa_weights(y_ref: list[float]) -> dict[str, float]:
-    ""
+    """Compute weights for dpub kappa."""
     d = _public_anomaly_weights(y_ref)
     k = _W["kappa"]
     return {i: d[i] * k.get(i, 0.0) for i in d if k.get(i, 0.0) > 1e-9}
 
 
 def _dpub_lambda_weights(y_ref: list[float]) -> dict[str, float]:
-    ""
+    """Compute weights for dpub lambda."""
     d = _public_anomaly_weights(y_ref)
     k = _W["kappa"]
     pi = _W["pi_hat"]
@@ -293,7 +295,7 @@ def _dpub_lambda_weights(y_ref: list[float]) -> dict[str, float]:
 
 
 def _kappa_task(label: str) -> tuple[str, float]:
-    ""
+    """Compute kappa task for the run safe active de-censoring workflow."""
     pr = _try_solve(
         lambda: robust_safe_response_probe(
             _W["triv_iv"],
@@ -313,7 +315,7 @@ def _kappa_task(label: str) -> tuple[str, float]:
 
 
 def _probe_task(task: tuple[str, str]) -> tuple[str, Any, Any]:
-    ""
+    """Compute probe task for the run safe active de-censoring workflow."""
     import random as _random
 
     mode, name = task
@@ -344,7 +346,7 @@ def _probe_task(task: tuple[str, str]) -> tuple[str, Any, Any]:
 
 
 def _empirical_mass_constraints(sf1, show, sd_reach, fold_idx, episodes, delta, method):
-    ""
+    """Compute empirical mass constraints for the run safe active de-censoring workflow."""
 
     pins: list[tuple[Any, int, int, float]] = []
     for info in sf1.info_sets:
@@ -388,6 +390,7 @@ def _empirical_mass_constraints(sf1, show, sd_reach, fold_idx, episodes, delta, 
 
 
 def _deploy(mode: str, name: str, episodes: int, seed: int) -> dict[str, Any]:
+    """Compute deploy for the run safe active de-censoring workflow."""
     sf1, payoff, v_ref = _W["sf1"], _W["payoff"], _W["v_ref"]
     groups, omega_bp, fold_idx = _W["groups"], _W["omega_bp"], _W["fold_idx"]
     info_by = _W["info_by"]
@@ -497,6 +500,7 @@ def _deploy(mode: str, name: str, episodes: int, seed: int) -> dict[str, Any]:
 
 
 def _cell(task: tuple[str, str, int, int]) -> dict[str, Any]:
+    """Run one independently reproducible experiment cell."""
     mode, name, episodes, seed = task
     r = _deploy(mode, name, episodes, seed)
     r.update(
@@ -510,7 +514,7 @@ def _cell(task: tuple[str, str, int, int]) -> dict[str, Any]:
 
 
 def _timeout_row(task: tuple[str, str, int, int], reason: str) -> dict[str, Any]:
-    ""
+    """Compute timeout row for the run safe active de-censoring workflow."""
     mode, name, episodes, seed = task
     return {
         "mode": mode,
@@ -529,7 +533,7 @@ def _timeout_row(task: tuple[str, str, int, int], reason: str) -> dict[str, Any]
 
 
 def _load_or_compute_kappa(river_labels: list[str]) -> dict[str, float]:
-    ""
+    """Load or compute kappa for the run safe active de-censoring workflow."""
     path = Path(f"results/kappa_cache_{GAME}_rho{RHO}.json")
     cached: dict[str, float] = {}
     if path.exists():
@@ -541,6 +545,7 @@ def _load_or_compute_kappa(river_labels: list[str]) -> dict[str, float]:
     tmp = Path(str(path) + ".tmp")
 
     def _flush() -> None:
+        """Persist the accumulated experiment rows to the output file."""
         tmp.write_text(json.dumps(cached))
         tmp.replace(path)
 
@@ -583,6 +588,7 @@ def _load_or_compute_kappa(river_labels: list[str]) -> dict[str, float]:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print(
         f"Safe Active De-censoring  game={GAME}  rho={RHO}  N={N_GRID}  "
         f"seeds={len(SEEDS)}  modes={MODES}  ({NPROC} workers)",
@@ -682,6 +688,7 @@ def main() -> None:
     oracle = {r["opponent"]: r for r in rows if r["mode"] == "oracle"}
 
     def cap(realized: float, name: str) -> float:
+        """Compute the certified share of the safe-exploitable gap."""
         lo = cpub[name]["realized"]
         hi = oracle[name]["realized"]
         return (realized - lo) / (hi - lo) if hi - lo > 1e-9 else 0.0

@@ -1,3 +1,5 @@
+//! Sequence form algorithms for safe observation. See Preliminaries and Problem Setup.
+
 use std::collections::HashMap;
 
 use ndarray::{Array1, Array2};
@@ -6,6 +8,7 @@ use crate::game::{Game, Node};
 use crate::kuhn::Kuhn;
 
 #[derive(Clone, Debug)]
+/// Stores state for info set.
 pub struct InfoSet {
     pub label: String,
 
@@ -14,6 +17,7 @@ pub struct InfoSet {
     pub children: Vec<(char, usize)>,
 }
 
+/// Stores state for sequence form.
 pub struct SequenceForm {
     pub player: usize,
 
@@ -23,7 +27,9 @@ pub struct SequenceForm {
     seq_index: HashMap<String, usize>,
 }
 
+/// Implements operations for `SequenceForm`.
 impl SequenceForm {
+    /// Constructs a value from parts.
     pub(crate) fn from_parts(
         player: usize,
         sequences: Vec<String>,
@@ -42,23 +48,30 @@ impl SequenceForm {
         }
     }
 
+    /// Computes num sequences.
     pub fn num_sequences(&self) -> usize {
         self.sequences.len()
     }
 
+    /// Computes num information sets.
     pub fn num_infosets(&self) -> usize {
         self.info_sets.len()
     }
 
+    /// Computes sequence index.
     pub fn sequence_index(&self, label: &str) -> Option<usize> {
         self.seq_index.get(label).copied()
     }
 
+    /// Computes num constraints.
     pub fn num_constraints(&self) -> usize {
         1 + self.info_sets.len()
     }
 
+    /// Computes constraint entries.
     pub fn constraint_entries(&self) -> Vec<(usize, usize, f64)> {
+        // Row zero fixes the empty sequence. Every later row enforces
+        // sum(children) - parent = 0 at one information set.
         let mut entries = vec![(0usize, 0usize, 1.0f64)];
         for (k, info) in self.info_sets.iter().enumerate() {
             let row = 1 + k;
@@ -70,12 +83,14 @@ impl SequenceForm {
         entries
     }
 
+    /// Computes constraint rhs.
     pub fn constraint_rhs(&self) -> Vec<f64> {
         let mut e = vec![0.0; self.num_constraints()];
         e[0] = 1.0;
         e
     }
 
+    /// Computes dense e matrix.
     pub fn dense_e_matrix(&self) -> Array2<f64> {
         let mut m = Array2::<f64>::zeros((self.num_constraints(), self.num_sequences()));
         for (row, col, value) in self.constraint_entries() {
@@ -84,6 +99,7 @@ impl SequenceForm {
         m
     }
 
+    /// Computes constraint residual.
     pub fn constraint_residual(&self, x: &[f64]) -> f64 {
         let x = Array1::from(x.to_vec());
         let ex = self.dense_e_matrix().dot(&x);
@@ -94,8 +110,11 @@ impl SequenceForm {
             .fold(0.0_f64, f64::max)
     }
 
+    /// Computes realization from behavior.
     pub fn realization_from_behavior(&self, behavior: &HashMap<String, Vec<f64>>) -> Vec<f64> {
         let mut x = vec![0.0; self.sequences.len()];
+        // Realization mass is propagated from the empty sequence through each
+        // local behavioral distribution.
         x[0] = 1.0;
         for info in &self.info_sets {
             let parent = x[info.parent_seq];
@@ -111,6 +130,7 @@ impl SequenceForm {
         x
     }
 
+    /// Ensure sequence.
     fn ensure_sequence(&mut self, label: &str) -> usize {
         if let Some(&i) = self.seq_index.get(label) {
             return i;
@@ -122,6 +142,7 @@ impl SequenceForm {
     }
 }
 
+/// Compile walk.
 fn compile_walk<G: Game>(
     game: &G,
     state: &G::State,
@@ -143,6 +164,8 @@ fn compile_walk<G: Game>(
             actions,
         } => {
             if acting != player {
+                // Other-player and chance branches do not change this
+                // player's active sequence.
                 for (_a, next) in &actions {
                     compile_walk(game, next, player, cur_seq, sf, info_index);
                 }
@@ -152,6 +175,8 @@ fn compile_walk<G: Game>(
             let children: Vec<(char, usize)> = match info_index.get(&infoset) {
                 Some(&idx) => sf.info_sets[idx].children.clone(),
                 None => {
+                    // An information set is compiled once even when several
+                    // game-tree histories share it.
                     let children: Vec<(char, usize)> = actions
                         .iter()
                         .map(|(a, _)| (*a, sf.ensure_sequence(&format!("{infoset}>{a}"))))
@@ -173,6 +198,7 @@ fn compile_walk<G: Game>(
     }
 }
 
+/// Compile a game tree into sequence form.
 pub fn compile<G: Game>(game: &G, player: usize) -> SequenceForm {
     let mut sf = SequenceForm {
         player,
@@ -185,26 +211,31 @@ pub fn compile<G: Game>(game: &G, player: usize) -> SequenceForm {
     sf
 }
 
+/// Compile Kuhn.
 pub fn compile_kuhn(player: usize) -> SequenceForm {
     compile(&Kuhn, player)
 }
 
+/// Computes sizes.
 pub fn sizes(player: usize) -> (usize, usize) {
     let sf = compile_kuhn(player);
     (sf.num_sequences(), sf.num_infosets())
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
 
     #[test]
+    /// Verifies that Kuhn has thirteen sequences six information sets.
     fn kuhn_has_thirteen_sequences_six_infosets() {
         assert_eq!(sizes(0), (13, 6));
         assert_eq!(sizes(1), (13, 6));
     }
 
     #[test]
+    /// Verifies that empty sequence is index zero.
     fn empty_sequence_is_index_zero() {
         let sf = compile_kuhn(1);
         assert_eq!(sf.sequences[0], "");
@@ -212,6 +243,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that constraint system has expected shape.
     fn constraint_system_has_expected_shape() {
         let sf = compile_kuhn(0);
         assert_eq!(sf.num_constraints(), 7);
@@ -221,6 +253,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that child weights sum to parent for uniform plan.
     fn child_weights_sum_to_parent_for_uniform_plan() {
         for player in 0..2 {
             let sf = compile_kuhn(player);
@@ -232,6 +265,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that biased plan also satisfies constraints.
     fn biased_plan_also_satisfies_constraints() {
         let sf = compile_kuhn(1);
         let mut behavior = HashMap::new();
@@ -244,6 +278,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that nonfeasible vector has positive residual.
     fn nonfeasible_vector_has_positive_residual() {
         let sf = compile_kuhn(0);
         let mut x = sf.realization_from_behavior(&HashMap::new());
@@ -252,6 +287,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that uniform realization has expected weights.
     fn uniform_realization_has_expected_weights() {
         let sf = compile_kuhn(0);
         let x = sf.realization_from_behavior(&HashMap::new());
@@ -262,6 +298,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that player0 second move parent is first action.
     fn player0_second_move_parent_is_first_action() {
         let sf = compile_kuhn(0);
         let parent = sf.sequence_index("0:>p").expect("sequence 0:>p");

@@ -1,11 +1,16 @@
+//! River pipeline algorithms for safe observation. See Experiments and supplementary Certification at the Unbucketed River.
+
 use std::collections::HashMap;
 
 use crate::confidence::{self, ConfidenceSet};
 use crate::river_range::{PubNode, RangeGame};
 use crate::sequence_form::SequenceForm;
 
+/// Stores state for split mix64.
 struct SplitMix64(u64);
+/// Implements operations for `SplitMix64`.
 impl SplitMix64 {
+    /// Draw the next uniform floating-point sample.
     fn next_f64(&mut self) -> f64 {
         self.0 = self.0.wrapping_add(0x9E3779B97F4A7C15);
         let mut z = self.0;
@@ -14,11 +19,13 @@ impl SplitMix64 {
         z = z ^ (z >> 31);
         (z >> 11) as f64 / (1u64 << 53) as f64
     }
+    /// Draw a uniform integer below the supplied bound.
     fn below(&mut self, n: usize) -> usize {
         ((self.next_f64() * n as f64) as usize).min(n - 1)
     }
 }
 
+/// Construct the overfold opponent policy.
 pub fn overfold_opponent(
     rg: &RangeGame,
     base: &HashMap<String, Vec<f64>>,
@@ -56,6 +63,7 @@ pub fn overfold_opponent(
     out
 }
 
+/// Construct confidence constraints for grouped pin.
 pub fn grouped_pin_confidence(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -158,6 +166,7 @@ pub fn grouped_pin_confidence(
     confidence::build_linear(sf1, entries, h, meta)
 }
 
+/// Computes reach invariant leak.
 pub fn reach_invariant_leak(
     rg: &RangeGame,
     base: &HashMap<String, Vec<f64>>,
@@ -241,6 +250,7 @@ pub fn reach_invariant_leak(
     out
 }
 
+/// Construct the revealed call grouped opponent policy.
 pub fn revealed_call_grouped_opponent(
     rg: &RangeGame,
     base: &HashMap<String, Vec<f64>>,
@@ -316,6 +326,7 @@ pub fn revealed_call_grouped_opponent(
     out
 }
 
+/// Construct the revealed call opponent policy.
 pub fn revealed_call_opponent(
     rg: &RangeGame,
     base: &HashMap<String, Vec<f64>>,
@@ -377,6 +388,7 @@ pub fn revealed_call_opponent(
     out
 }
 
+/// Stores state for sim counts.
 pub struct SimCounts {
     pub public: HashMap<String, (u64, Vec<u64>)>,
 
@@ -385,6 +397,7 @@ pub struct SimCounts {
     pub hands: u64,
 }
 
+/// Simulate counts.
 pub fn simulate_counts(
     rg: &RangeGame,
     b0: &HashMap<String, Vec<f64>>,
@@ -397,6 +410,8 @@ pub fn simulate_counts(
     let mut revealed: HashMap<String, Vec<u64>> = HashMap::new();
     let (n0, n1) = (rg.combos(0), rg.combos(1));
 
+    // The fixed generator keeps every experiment cell reproducible without
+    // depending on a platform-specific random-number implementation.
     for _ in 0..n {
         let (i, j) = loop {
             let i = rng.below(n0);
@@ -411,6 +426,8 @@ pub fn simulate_counts(
             match &rg.tree.nodes[node_id] {
                 PubNode::Fold { .. } => break,
                 PubNode::Showdown { .. } => {
+                    // Pending private labels become observable only at
+                    // showdown; a fold discards them and implements censoring.
                     for (label, action) in &pending {
                         let m = revealed.entry(label.clone()).or_insert_with(|| vec![0; 8]);
                         m[*action] += 1;
@@ -457,6 +474,7 @@ pub fn simulate_counts(
     }
 }
 
+/// Computes hoeffding.
 fn hoeffding(count: u64, delta: f64) -> f64 {
     if count == 0 {
         return 1.0;
@@ -464,6 +482,7 @@ fn hoeffding(count: u64, delta: f64) -> f64 {
     ((1.0 / (2.0 * count as f64)) * (2.0 / delta).ln()).sqrt()
 }
 
+/// Computes bernstein.
 fn bernstein(c: u64, n: u64, delta: f64) -> f64 {
     let n_f = n as f64;
     let p = c as f64 / n_f;
@@ -471,6 +490,7 @@ fn bernstein(c: u64, n: u64, delta: f64) -> f64 {
     (2.0 * p * (1.0 - p) * log_term / n_f).sqrt() + 3.0 * log_term / n_f
 }
 
+/// Compute weights for reach.
 pub fn reach_weights(rg: &RangeGame, b0: &HashMap<String, Vec<f64>>) -> HashMap<String, f64> {
     let mut weights = HashMap::new();
     let n0 = rg.combos(0);
@@ -509,6 +529,7 @@ pub fn reach_weights(rg: &RangeGame, b0: &HashMap<String, Vec<f64>>) -> HashMap<
     weights
 }
 
+/// Construct confidence constraints for public.
 pub fn public_confidence(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -546,6 +567,7 @@ pub fn public_confidence(
     confidence::build_public(sf1, &groups, &intervals, &weights)
 }
 
+/// Construct confidence constraints for pin.
 pub fn pin_confidence(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -573,6 +595,7 @@ pub fn pin_confidence(
         .filter_map(|(label, _)| children.get(label.as_str()))
         .map(|acts| acts.iter().filter(|&&a| a != 'f').count())
         .sum();
+    // Each non-fold action contributes an upper and lower simultaneous bound.
     let delta_row = delta / (2.0 * candidates.max(1) as f64);
     let mut boxes: HashMap<String, Vec<(f64, f64)>> = HashMap::new();
     for (label, &w) in &weights {
@@ -593,6 +616,8 @@ pub fn pin_confidence(
                 let c = acts[ai];
                 let eps = bernstein(c, counts.hands, delta_row);
                 let p = c as f64 / counts.hands as f64;
+                // Reveal frequency factorizes as safe reach w times the
+                // opponent's conditional continuation probability.
                 let lo = ((p - eps) / w).max(0.0);
                 let hi = ((p + eps) / w).min(1.0);
                 if hi - lo >= 1.0 {
@@ -607,6 +632,7 @@ pub fn pin_confidence(
     confidence::build_boxes(sf1, &boxes)
 }
 
+/// Construct the sampled leak opponent policy.
 pub fn sampled_leak_opponent(
     rg: &RangeGame,
     base: &HashMap<String, Vec<f64>>,
@@ -615,6 +641,7 @@ pub fn sampled_leak_opponent(
     sampled_leak_opponent_salted(rg, base, strength, 0)
 }
 
+/// Computes sampled leak opponent salted.
 pub fn sampled_leak_opponent_salted(
     rg: &RangeGame,
     base: &HashMap<String, Vec<f64>>,
@@ -674,7 +701,10 @@ pub fn sampled_leak_opponent_salted(
     out
 }
 
+/// Merge counts.
 pub fn merge_counts(a: &SimCounts, b: &SimCounts) -> SimCounts {
+    // Independent cells are additive because both channels store sufficient
+    // statistics rather than normalized estimates.
     let mut public = a.public.clone();
     for (k, (v, acts)) in &b.public {
         let e = public
@@ -707,6 +737,7 @@ pub fn merge_counts(a: &SimCounts, b: &SimCounts) -> SimCounts {
     }
 }
 
+/// Construct confidence constraints for passive pin.
 pub fn passive_pin_confidence(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -792,6 +823,7 @@ pub fn passive_pin_confidence(
     confidence::build_boxes(sf1, &boxes)
 }
 
+/// Construct confidence constraints for passive grouped.
 pub fn passive_grouped_confidence(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -900,6 +932,7 @@ pub fn passive_grouped_confidence(
     confidence::build_linear(sf1, entries, h, meta)
 }
 
+/// Construct the call down policy.
 pub fn call_down_policy(rg: &RangeGame) -> HashMap<String, Vec<f64>> {
     let mut out = HashMap::new();
     for node in &rg.tree.nodes {
@@ -924,6 +957,7 @@ pub fn call_down_policy(rg: &RangeGame) -> HashMap<String, Vec<f64>> {
     out
 }
 
+/// Construct the allin then call policy.
 pub fn allin_then_call_policy(rg: &RangeGame) -> HashMap<String, Vec<f64>> {
     let mut out = HashMap::new();
     for node in &rg.tree.nodes {
@@ -957,6 +991,7 @@ pub fn allin_then_call_policy(rg: &RangeGame) -> HashMap<String, Vec<f64>> {
     out
 }
 
+/// Construct the bet then call policy.
 pub fn bet_then_call_policy(rg: &RangeGame) -> HashMap<String, Vec<f64>> {
     let mut out = HashMap::new();
     for node in &rg.tree.nodes {
@@ -991,6 +1026,7 @@ pub fn bet_then_call_policy(rg: &RangeGame) -> HashMap<String, Vec<f64>> {
     out
 }
 
+/// Computes population pins.
 pub fn population_pins(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -1023,6 +1059,7 @@ pub fn population_pins(
     confidence::build_boxes(sf1, &boxes)
 }
 
+/// Computes population grouped.
 pub fn population_grouped(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -1098,6 +1135,7 @@ pub fn population_grouped(
     confidence::build_linear(sf1, entries, h, meta)
 }
 
+/// Computes population public.
 pub fn population_public(
     rg: &RangeGame,
     sf1: &SequenceForm,
@@ -1146,6 +1184,7 @@ pub fn population_public(
     confidence::build_public(sf1, &groups, &intervals, &weights)
 }
 
+/// Run the river experiment experiment.
 pub fn run_river_experiment(leak: &str, n_hands: u64, quantiles: usize, seed: u64, out_dir: &str) {
     use crate::best_response::treeplex_opt;
     use crate::hand_eval::card;
@@ -1345,6 +1384,7 @@ pub fn run_river_experiment(leak: &str, n_hands: u64, quantiles: usize, seed: u6
     .expect("write checkpoint");
 }
 
+/// Run the passive river experiment experiment.
 pub fn run_passive_river_experiment(
     leak: &str,
     n_hands: u64,
@@ -1474,12 +1514,14 @@ pub fn run_passive_river_experiment(
     std::fs::write(&ckpt, json).expect("write checkpoint");
 }
 
+/// Computes try robust.
 fn try_robust(
     f: impl FnOnce() -> crate::robust_cuts::CutSolution,
 ) -> Option<crate::robust_cuts::CutSolution> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).ok()
 }
 
+/// Run the population river experiment experiment.
 pub fn run_population_river_experiment(class: &str, param: u64, salt: u64, out_dir: &str) {
     use crate::best_response::treeplex_opt;
     use crate::hand_eval::card;
@@ -1622,6 +1664,7 @@ pub fn run_population_river_experiment(class: &str, param: u64, salt: u64, out_d
     std::fs::write(&ckpt, json).expect("write checkpoint");
 }
 
+/// Run the drift river experiment experiment.
 pub fn run_drift_river_experiment(
     pair: &str,
     n_hands: u64,
@@ -1784,6 +1827,7 @@ pub fn run_drift_river_experiment(
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::holdem::canonical_holdem;
@@ -1792,6 +1836,7 @@ mod tests {
 
     #[test]
     #[ignore = "full river pipeline pricing; run explicitly in release mode"]
+    /// Verifies that full river pipeline robust pricing.
     fn full_river_pipeline_robust_pricing() {
         run_river_experiment(
             "overfold",
@@ -1804,6 +1849,7 @@ mod tests {
 
     #[test]
     #[ignore = "full river revealed-call cell; run explicitly in release mode"]
+    /// Verifies that full river revealed call experiment.
     fn full_river_revealed_call_experiment() {
         run_river_experiment(
             "revealed_call",
@@ -1816,6 +1862,7 @@ mod tests {
 
     #[test]
     #[ignore = "N-ladder point; run explicitly in release mode"]
+    /// Verifies that full river ladder revealed n1e5.
     fn full_river_ladder_revealed_n1e5() {
         for k in [4, 64] {
             run_river_experiment(
@@ -1829,6 +1876,7 @@ mod tests {
     }
     #[test]
     #[ignore = "N-ladder point; run explicitly in release mode"]
+    /// Verifies that full river ladder revealed n1e6.
     fn full_river_ladder_revealed_n1e6() {
         for k in [4, 16, 64] {
             run_river_experiment(
@@ -1842,6 +1890,7 @@ mod tests {
     }
     #[test]
     #[ignore = "N-ladder point; run explicitly in release mode"]
+    /// Verifies that full river ladder revealed n1e7.
     fn full_river_ladder_revealed_n1e7() {
         for k in [4, 16, 64] {
             run_river_experiment(
@@ -1855,6 +1904,7 @@ mod tests {
     }
     #[test]
     #[ignore = "N-ladder point; run explicitly in release mode"]
+    /// Verifies that full river ladder overfold.
     fn full_river_ladder_overfold() {
         for n in [1_000_000, 10_000_000] {
             run_river_experiment(
@@ -1869,6 +1919,7 @@ mod tests {
 
     #[test]
     #[ignore = "N-ladder point; run explicitly in release mode"]
+    /// Verifies that full river ladder reach invariant.
     fn full_river_ladder_reach_invariant() {
         for n in [100_000, 1_000_000, 10_000_000] {
             run_river_experiment(
@@ -1883,28 +1934,33 @@ mod tests {
 
     #[test]
     #[ignore = "full river residual computation; run explicitly in release mode"]
+    /// Verifies that full river residual revealed call.
     fn full_river_residual_revealed_call() {
         full_river_residual("revealed_call");
     }
 
     #[test]
     #[ignore = "full river grouped residual; run explicitly in release mode"]
+    /// Verifies that full river residual revealed call grouped.
     fn full_river_residual_revealed_call_grouped() {
         full_river_residual("revealed_call_grouped");
     }
 
     #[test]
     #[ignore = "full river reach-invariant residual; run explicitly in release mode"]
+    /// Verifies that full river residual reach invariant.
     fn full_river_residual_reach_invariant() {
         full_river_residual("reach_invariant");
     }
 
     #[test]
     #[ignore = "full river reach-invariant 2-probe residual; run explicitly in release mode"]
+    /// Verifies that full river residual reach invariant 2probe.
     fn full_river_residual_reach_invariant_2probe() {
         full_river_residual("reach_invariant_2probe");
     }
 
+    /// Computes full river residual.
     fn full_river_residual(leak: &'static str) {
         use crate::best_response::treeplex_opt;
         use crate::hand_eval::card;
@@ -2111,6 +2167,7 @@ mod tests {
 
     #[test]
     #[ignore = "full river kappa blueprint-shift overlay; run explicitly in release mode"]
+    /// Verifies that full river kappa blueprint shift.
     fn full_river_kappa_blueprint_shift() {
         use crate::best_response::treeplex_opt;
         use crate::hand_eval::card;
@@ -2227,6 +2284,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that revealed call grouped blinds public on compact river.
     fn revealed_call_grouped_blinds_public_on_compact_river() {
         use crate::best_response::treeplex_opt;
         use crate::payoff_oracle::{PayoffOracle, RangeOracle};
@@ -2280,6 +2338,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that reach invariant leak blinds public on compact river.
     fn reach_invariant_leak_blinds_public_on_compact_river() {
         use crate::best_response::treeplex_opt;
         use crate::payoff_oracle::{PayoffOracle, RangeOracle};
@@ -2346,6 +2405,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that population sets feasible on compact river.
     fn population_sets_feasible_on_compact_river() {
         use crate::robust_cuts::inner_min_lp;
         let game = canonical_holdem();
@@ -2404,6 +2464,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that pipeline sets cover truth on compact river.
     fn pipeline_sets_cover_truth_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);

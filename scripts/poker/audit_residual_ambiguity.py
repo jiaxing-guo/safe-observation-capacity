@@ -1,4 +1,4 @@
-""
+"""Audit residual ambiguity. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -44,6 +44,7 @@ _W: dict[str, Any] = {}
 
 
 def _fold_indices(sf1) -> dict[str, int]:
+    """Compute fold indices for the audit residual ambiguity workflow."""
     out: dict[str, int] = {}
     for info in sf1.info_sets:
         acts = [a for a, _ in info.children]
@@ -53,7 +54,7 @@ def _fold_indices(sf1) -> dict[str, int]:
 
 
 def _reached_continuations(sf1, fold_idx, y_star):
-    ""
+    """Compute reached continuations for the audit residual ambiguity workflow."""
     audited = []
     n_total = 0
     n_flow_null = 0
@@ -73,7 +74,7 @@ def _reached_continuations(sf1, fold_idx, y_star):
 
 
 def _pin_rows(pins):
-    ""
+    """Compute pin rows for the audit residual ambiguity workflow."""
     entries: list[tuple[int, int, float]] = []
     h: list[float] = []
     meta: list[tuple[str, int]] = []
@@ -91,6 +92,7 @@ def _pin_rows(pins):
 
 
 def _init() -> None:
+    """Initialize process-local state for parallel experiment workers."""
     if os.environ.get("SAFE_OBSERVATION_HIGHS_THREADS") is None:
         os.environ["SAFE_OBSERVATION_HIGHS_THREADS"] = "1"
     sf1 = compile_game(GAME, 1)
@@ -124,6 +126,7 @@ def _init() -> None:
 
 
 def _solve(pins) -> float:
+    """Solve the configured optimization problem."""
     entries, h, meta = _pin_rows(pins)
     res = robust_safe_response_linear(
         {}, {}, entries, h, v_ref=_W["v_ref"], eps_safe=RHO, game=GAME, row_meta=meta
@@ -132,7 +135,7 @@ def _solve(pins) -> float:
 
 
 def _cell(task: tuple[str, str, str]) -> dict[str, Any]:
-    ""
+    """Run one independently reproducible experiment cell."""
     name, kind, payload = task
     rec = _W["opp"][name]
     child_val: dict[int, float] = rec["child_val"]
@@ -168,10 +171,12 @@ def _cell(task: tuple[str, str, str]) -> dict[str, Any]:
 
 
 def _key(task: tuple[str, str, str]) -> tuple[str, str, str]:
+    """Compute key for the audit residual ambiguity workflow."""
     return task
 
 
 def _run_stage(pending, ckpt_fh, done, total, label):
+    """Run the stage experiment for the audit residual ambiguity workflow."""
     rows: list[dict[str, Any]] = []
     with ProcessPool(
         max_workers=NPROC, initializer=_init, context=mp.get_context("spawn")
@@ -215,6 +220,7 @@ def _run_stage(pending, ckpt_fh, done, total, label):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print(f"# Residual-width audit on {GAME}  rho={RHO}  nproc={NPROC}", flush=True)
     _init()
     v_ref = _W["v_ref"]
@@ -302,9 +308,11 @@ def main() -> None:
 
 
 def _report(all_rows, V, single) -> None:
+    """Assemble the reader-facing summary for one experiment."""
     v_ref = _W["v_ref"]
 
     def by(opp, kind, payload=""):
+        """Compute by for the audit residual ambiguity workflow."""
         return next(
             (
                 r

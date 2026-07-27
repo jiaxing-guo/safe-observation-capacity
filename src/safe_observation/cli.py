@@ -1,4 +1,4 @@
-""
+"""CLI primitives for safe-observation experiments. See supplementary Reproducibility for its role in the release workflow."""
 
 import argparse
 
@@ -14,6 +14,7 @@ from .sequence_form import kuhn_sizes
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the command-line entry point."""
     parser = argparse.ArgumentParser(
         prog="safe-observation",
         description="Safe active de-censoring in imperfect-information games",

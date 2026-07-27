@@ -1,4 +1,4 @@
-""
+"""Regression tests for test showdown. See the corresponding implementation module and supplementary Reproducibility."""
 
 from safe_observation import native
 from safe_observation.confidence import OpponentEvidenceStore
@@ -21,6 +21,7 @@ HOLDEM_VALUE = native.blueprint_lp("holdem")[0]
 
 
 def _blueprint_behaviors():
+    """Compute blueprint behaviors for the test showdown workflow."""
     sf0 = compile_game("leduc", 0)
     sf1 = compile_game("leduc", 1)
     beh0 = sf0.behavior_from_realization(native.blueprint_realization("leduc", 0))
@@ -29,7 +30,7 @@ def _blueprint_behaviors():
 
 
 def test_showdown_split_sums_to_full_counts():
-
+    """Verify that showdown split sums to full counts."""
     beh0, beh1 = _blueprint_behaviors()
     full_pay, full = native.simulate("leduc", beh0, beh1, 6000, 2026)
     pay, show, fold = native.simulate_showdown("leduc", beh0, beh1, 6000, 2026)
@@ -44,7 +45,7 @@ def test_showdown_split_sums_to_full_counts():
 
 
 def test_showdown_estimate_is_more_biased_than_full():
-
+    """Verify that showdown estimate is more biased than full."""
     opp = leduc_static_biased_opponent()
     beh0, _ = _blueprint_behaviors()
     ev_show = OpponentEvidenceStore.for_game("leduc")
@@ -60,6 +61,7 @@ def test_showdown_estimate_is_more_biased_than_full():
             ev_full.record(label, c)
 
     def mean_bias(store):
+        """Compute mean bias for the test showdown workflow."""
         tot, n = 0.0, 0
         for label in store.labels:
             if label not in opp.behavior or store.visits(label) < 30:
@@ -74,7 +76,7 @@ def test_showdown_estimate_is_more_biased_than_full():
 
 
 def _public_set(opp, rounds=20, seed=7):
-    ""
+    """Compute public set for the test showdown workflow."""
     beh0, _ = _blueprint_behaviors()
     ev = OpponentEvidenceStore.for_game("leduc")
     for t in range(rounds):
@@ -89,7 +91,7 @@ def _public_set(opp, rounds=20, seed=7):
 
 
 def test_guard_plan_respects_the_budget_relaxed_floor():
-
+    """Verify that guard plan respects the budget relaxed floor."""
     opp = leduc_static_biased_opponent()
     groups, intervals = _public_set(opp)
     y_hat = list(native.blueprint_realization("leduc", 1))
@@ -108,7 +110,7 @@ def test_guard_plan_respects_the_budget_relaxed_floor():
 
 
 def test_tight_guard_approaches_robust_public_value():
-
+    """Verify that tight guard approaches robust public value."""
     opp = leduc_low_reach_leak_opponent()
     groups, intervals = _public_set(opp)
     y_hat = list(native.blueprint_realization("leduc", 1))
@@ -132,7 +134,7 @@ def test_tight_guard_approaches_robust_public_value():
 
 
 def test_guard_recovers_censored_leak_and_all_methods_stay_safe():
-
+    """Verify that guard recovers censored leak and all methods stay safe."""
     suite = {
         "equilibrium": leduc_equilibrium_opponent(),
         "low_reach_leak": leduc_low_reach_leak_opponent(),
@@ -173,7 +175,7 @@ def test_guard_recovers_censored_leak_and_all_methods_stay_safe():
 
 
 def test_uncertified_baselines_breach_the_floor_that_safe_response_respects():
-
+    """Verify that uncertified baselines breach the floor that safe response respects."""
     suite = {"static_biased": leduc_static_biased_opponent()}
     rho_cap = 0.5
     res = run_showdown_comparison(
@@ -201,7 +203,7 @@ def test_uncertified_baselines_breach_the_floor_that_safe_response_respects():
 
 
 def test_point_response_shows_a_censoring_phantom():
-
+    """Verify that point response shows a censoring phantom."""
     suite = {"equilibrium": leduc_equilibrium_opponent()}
     res = run_showdown_comparison(
         suite,
@@ -220,7 +222,7 @@ def test_point_response_shows_a_censoring_phantom():
 
 
 def test_holdem_guard_recovers_censored_fold_at_hunl_scale():
-
+    """Verify that holdem guard recovers censored fold at hunl scale."""
     suite = {
         "equilibrium": holdem_equilibrium_opponent(),
         "censored_fold": holdem_censored_fold_opponent(),

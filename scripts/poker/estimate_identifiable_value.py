@@ -1,4 +1,4 @@
-""
+"""Estimate the identifiable value experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -35,6 +35,7 @@ OUT = Path(
 
 
 def _fold_action_indices(sf1) -> dict[str, int]:
+    """Compute fold action indices for the estimate identifiable value workflow."""
     out: dict[str, int] = {}
     for info in sf1.info_sets:
         for idx, (action, _child) in enumerate(info.children):
@@ -47,7 +48,7 @@ def _fold_action_indices(sf1) -> dict[str, int]:
 def _diagnostic_opponents(
     game: str, actions: dict[str, list[str]], eq: dict[str, list[float]]
 ) -> dict[str, dict[str, Any]]:
-    ""
+    """Compute diagnostic opponents for the estimate identifiable value workflow."""
     revealed_call = _perturb(
         eq,
         actions,
@@ -73,7 +74,7 @@ def _population_public_intervals(
     fold_only: bool = False,
     fold_idx: dict[str, int] | None = None,
 ) -> dict[str, list[tuple[float, float]]]:
-    ""
+    """Compute the population public intervals."""
     fold_idx = fold_idx or {}
     out: dict[str, list[tuple[float, float]]] = {}
     for key, members in groups.items():
@@ -104,7 +105,7 @@ def _population_public_intervals(
 def _population_event_constraints(
     sf1, y_star: list[float], omega: dict[str, float], fold_idx: dict[str, int]
 ) -> tuple[list[tuple[int, int, float]], list[float], list[tuple[str, int]]]:
-    ""
+    """Compute population event constraints for the estimate identifiable value workflow."""
     entries: list[tuple[int, int, float]] = []
     h: list[float] = []
     meta: list[tuple[str, int]] = []
@@ -130,6 +131,7 @@ def _population_event_constraints(
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     print(
         f"# C_obs IDEAL value test (Q1, population/exact)  game={game}  rho={RHO}  lean={LEAN}",
@@ -209,6 +211,7 @@ def main() -> None:
         )
 
         def realized(response, y_star=y_star) -> float:
+            """Evaluate a realization plan against the selected opponent."""
             return payoff.bilinear(list(response.realization), y_star) - v_ref
 
         core_gain = realized(core)

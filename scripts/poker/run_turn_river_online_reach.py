@@ -1,4 +1,4 @@
-""
+"""Run the turn river online reach experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import multiprocessing as mp
@@ -33,6 +33,7 @@ OUT = Path(
 
 
 def _wait_for_json(path: Path) -> None:
+    """Compute wait for JSON for the run turn river online reach workflow."""
     print(f"waiting for upstream artifact: {path}", flush=True)
     while True:
         if path.exists() and path.stat().st_size > 0:
@@ -51,6 +52,7 @@ def _wait_for_json(path: Path) -> None:
 
 
 def _run_seed(seed: int) -> dict:
+    """Run the seed experiment for the run turn river online reach workflow."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUT_DIR / f"online_reach_seed_{seed}.json"
@@ -111,10 +113,12 @@ def _run_seed(seed: int) -> dict:
 
 
 def _mean(xs: list[float]) -> float:
+    """Compute the arithmetic mean of the supplied observations."""
     return sum(xs) / len(xs) if xs else 0.0
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     _wait_for_json(WAIT_FOR)
     print(
         f"launching online reach reps: {len(SEEDS)} seeds, workers={WORKERS}, "

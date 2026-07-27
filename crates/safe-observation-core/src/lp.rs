@@ -1,3 +1,5 @@
+//! Linear program algorithms for safe observation. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River.
+
 use std::collections::HashMap;
 use std::io::Write;
 use std::time::Instant;
@@ -9,18 +11,21 @@ use crate::confidence::{build_kuhn as build_kuhn_confidence, ConfidenceSet};
 use crate::payoff::{build_kuhn as build_kuhn_payoff, PayoffMatrix};
 use crate::sequence_form::{compile_kuhn, SequenceForm};
 
+/// Stores state for blueprint solution.
 pub struct BlueprintSolution {
     pub value: f64,
 
     pub realization: Vec<f64>,
 }
 
+/// Stores state for safety result.
 pub struct SafetyResult {
     pub value: f64,
 
     pub best_response: Vec<f64>,
 }
 
+/// Stores state for robust safe solution.
 pub struct RobustSafeSolution {
     pub robust_value: f64,
 
@@ -29,12 +34,14 @@ pub struct RobustSafeSolution {
     pub confidence_duals: Vec<f64>,
 }
 
+/// Stores state for confidence response result.
 pub struct ConfidenceResponseResult {
     pub value: f64,
 
     pub realization: Vec<f64>,
 }
 
+/// Computes require optimal.
 pub(crate) fn require_optimal(status: HighsModelStatus, what: &str) {
     assert_eq!(
         status,
@@ -43,16 +50,19 @@ pub(crate) fn require_optimal(status: HighsModelStatus, what: &str) {
     );
 }
 
+/// Computes timing enabled.
 fn timing_enabled() -> bool {
     std::env::var("SAFE_OBSERVATION_TIMERS")
         .map(|value| !matches!(value.as_str(), "" | "0" | "false" | "False" | "FALSE"))
         .unwrap_or(false)
 }
 
+/// Computes timing start.
 fn timing_start() -> Option<Instant> {
     timing_enabled().then(Instant::now)
 }
 
+/// Computes timing log.
 fn timing_log(timer: Option<Instant>, scope: &str, stage: &str, details: impl AsRef<str>) {
     if let Some(start) = timer {
         let elapsed = start.elapsed().as_secs_f64();
@@ -70,6 +80,7 @@ fn timing_log(timer: Option<Instant>, scope: &str, stage: &str, details: impl As
     }
 }
 
+/// Apply highs options.
 pub(crate) fn apply_highs_options(model: &mut Model) {
     model.set_option("output_flag", false);
     model.set_option("log_to_console", false);
@@ -100,6 +111,7 @@ pub(crate) fn apply_highs_options(model: &mut Model) {
     }
 }
 
+/// Solve blueprint.
 pub fn solve_blueprint(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -123,6 +135,8 @@ pub fn solve_blueprint(
 
     let mut pb = RowProblem::default();
 
+    // x is the player-one realization plan; q is the dual certificate for the
+    // opponent's sequence-form flow problem.
     let xs: Vec<Col> = (0..n_x).map(|_| pb.add_column(0.0, 0.0..)).collect();
     let qs: Vec<Col> = (0..n_q)
         .map(|i| pb.add_column(e2[i], f64::NEG_INFINITY..))
@@ -149,6 +163,8 @@ pub fn solve_blueprint(
     );
 
     let mut j_rows: Vec<Vec<(Col, f64)>> = vec![Vec::new(); n_y];
+    // These rows impose E_2^T q <= A^T x, so maximizing e_2^T q computes the
+    // maximin blueprint without enumerating opponent pure strategies.
     for (i, j, v) in sf1.constraint_entries() {
         j_rows[j].push((qs[i], v));
     }
@@ -189,6 +205,7 @@ pub fn solve_blueprint(
     BlueprintSolution { value, realization }
 }
 
+/// Computes safety verify.
 pub fn safety_verify(sf1: &SequenceForm, payoff: &PayoffMatrix, x: &[f64]) -> SafetyResult {
     let n_y = sf1.num_sequences();
     let e2 = sf1.constraint_rhs();
@@ -218,12 +235,14 @@ pub fn safety_verify(sf1: &SequenceForm, payoff: &PayoffMatrix, x: &[f64]) -> Sa
     }
 }
 
+/// Stores state for best response result.
 pub struct BestResponseResult {
     pub value: f64,
 
     pub realization: Vec<f64>,
 }
 
+/// Computes best response player-one.
 pub fn best_response_p1(
     sf0: &SequenceForm,
     payoff: &PayoffMatrix,
@@ -254,6 +273,7 @@ pub fn best_response_p1(
     BestResponseResult { value, realization }
 }
 
+/// Computes safety constrained best response player-one.
 pub fn safety_constrained_best_response_p1(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -313,6 +333,7 @@ pub fn safety_constrained_best_response_p1(
     BestResponseResult { value, realization }
 }
 
+/// Computes confidence min response.
 pub fn confidence_min_response(
     sf1: &SequenceForm,
     confidence: &ConfidenceSet,
@@ -362,12 +383,14 @@ pub fn confidence_min_response(
     ConfidenceResponseResult { value, realization }
 }
 
+/// Stores state for restricted Nash result.
 pub struct RestrictedNashResult {
     pub value: f64,
 
     pub realization: Vec<f64>,
 }
 
+/// Computes restricted Nash response.
 pub fn restricted_nash_response(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -419,6 +442,7 @@ pub fn restricted_nash_response(
     RestrictedNashResult { value, realization }
 }
 
+/// Solve blueprint Kuhn.
 pub fn solve_blueprint_kuhn() -> BlueprintSolution {
     let sf0 = compile_kuhn(0);
     let sf1 = compile_kuhn(1);
@@ -426,18 +450,21 @@ pub fn solve_blueprint_kuhn() -> BlueprintSolution {
     solve_blueprint(&sf0, &sf1, &payoff)
 }
 
+/// Computes safety verify Kuhn.
 pub fn safety_verify_kuhn(x: &[f64]) -> SafetyResult {
     let sf1 = compile_kuhn(1);
     let payoff = build_kuhn_payoff();
     safety_verify(&sf1, &payoff, x)
 }
 
+/// Computes best response player-one Kuhn.
 pub fn best_response_p1_kuhn(y: &[f64]) -> BestResponseResult {
     let sf0 = compile_kuhn(0);
     let payoff = build_kuhn_payoff();
     best_response_p1(&sf0, &payoff, y)
 }
 
+/// Computes robust safe response.
 pub fn robust_safe_response(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -453,6 +480,7 @@ pub fn robust_safe_response(
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Computes robust safe response probe.
 pub fn robust_safe_response_probe(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -476,11 +504,13 @@ pub fn robust_safe_response_probe(
     )
 }
 
+/// Stores state for cut master solution.
 struct CutMasterSolution {
     value_bound: f64,
     realization: Vec<f64>,
 }
 
+/// Solve cut master.
 fn solve_cut_master(
     sf0: &SequenceForm,
     robust_cuts: &[Vec<f64>],
@@ -545,6 +575,7 @@ fn solve_cut_master(
     }
 }
 
+/// Computes try robust safe response cutting plane.
 pub fn try_robust_safe_response_cutting_plane(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -632,6 +663,7 @@ pub fn try_robust_safe_response_cutting_plane(
     ))
 }
 
+/// Computes robust safe response cutting plane.
 pub fn robust_safe_response_cutting_plane(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -649,6 +681,7 @@ pub fn robust_safe_response_cutting_plane(
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Computes robust safe response inner.
 fn robust_safe_response_inner(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -797,6 +830,7 @@ fn robust_safe_response_inner(
     }
 }
 
+/// Stores state for guarded solution.
 pub struct GuardedSolution {
     pub realization: Vec<f64>,
 
@@ -804,6 +838,7 @@ pub struct GuardedSolution {
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Computes confidence guarded point probe.
 pub fn confidence_guarded_point_probe(
     sf0: &SequenceForm,
     sf1: &SequenceForm,
@@ -904,6 +939,7 @@ pub fn confidence_guarded_point_probe(
     }
 }
 
+/// Computes robust safe response Kuhn.
 pub fn robust_safe_response_kuhn(
     intervals: &HashMap<String, Vec<(f64, f64)>>,
     v_ref: f64,
@@ -917,14 +953,17 @@ pub fn robust_safe_response_kuhn(
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use std::collections::HashMap;
 
     use super::*;
 
+    /// Defines the Kuhn value constant.
     const KUHN_VALUE: f64 = -1.0 / 18.0;
 
     #[test]
+    /// Verifies that blueprint value matches known Kuhn value.
     fn blueprint_value_matches_known_kuhn_value() {
         let sol = solve_blueprint_kuhn();
         assert!(
@@ -938,6 +977,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that blueprint is exactly safe against best response.
     fn blueprint_is_exactly_safe_against_best_response() {
         let sol = solve_blueprint_kuhn();
         let safety = safety_verify_kuhn(&sol.realization);
@@ -947,6 +987,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that always pass is maximally exploited.
     fn always_pass_is_maximally_exploited() {
         let sf0 = compile_kuhn(0);
         let mut behavior = HashMap::new();
@@ -962,6 +1003,7 @@ mod tests {
         );
     }
 
+    /// Computes always fold intervals.
     fn always_fold_intervals() -> HashMap<String, Vec<(f64, f64)>> {
         let sf1 = compile_kuhn(1);
         let mut m = HashMap::new();
@@ -972,6 +1014,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that robust value equals game value for full polytope.
     fn robust_value_equals_game_value_for_full_polytope() {
         let sol = robust_safe_response_kuhn(&HashMap::new(), KUHN_VALUE, 0.0);
         assert!(
@@ -984,6 +1027,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that robust response is always safe.
     fn robust_response_is_always_safe() {
         let sol = robust_safe_response_kuhn(&always_fold_intervals(), KUHN_VALUE, 0.0);
         let safety = safety_verify_kuhn(&sol.realization);
@@ -995,6 +1039,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that robust exploits always fold when safety relaxed.
     fn robust_exploits_always_fold_when_safety_relaxed() {
         let sol = robust_safe_response_kuhn(&always_fold_intervals(), KUHN_VALUE, 10.0);
         assert!(
@@ -1005,6 +1050,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that safe exploit beats equilibrium but trails unconstrained.
     fn safe_exploit_beats_equilibrium_but_trails_unconstrained() {
         let safe = robust_safe_response_kuhn(&always_fold_intervals(), KUHN_VALUE, 0.0);
         let unconstrained = robust_safe_response_kuhn(&always_fold_intervals(), KUHN_VALUE, 10.0);
@@ -1017,6 +1063,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that cutting plane matches monolithic robust Kuhn.
     fn cutting_plane_matches_monolithic_robust_kuhn() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -1047,6 +1094,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that smaller scbr matches singleton robust Kuhn.
     fn smaller_scbr_matches_singleton_robust_kuhn() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -1072,6 +1120,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that best response lower bounds game value.
     fn best_response_lower_bounds_game_value() {
         let sf1 = compile_kuhn(1);
         let cases = [vec![0.5, 0.5], vec![1.0, 0.0], vec![0.2, 0.8]];
@@ -1094,6 +1143,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that best response to equilibrium near game value.
     fn best_response_to_equilibrium_near_game_value() {
         let sol = crate::kuhn::solve(100_000);
         let sf1 = compile_kuhn(1);
@@ -1115,6 +1165,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that best response to always fold is plus one.
     fn best_response_to_always_fold_is_plus_one() {
         let sf1 = compile_kuhn(1);
         let mut behavior = HashMap::new();
@@ -1130,6 +1181,7 @@ mod tests {
         );
     }
 
+    /// Computes always fold realization.
     fn always_fold_realization() -> Vec<f64> {
         let sf1 = compile_kuhn(1);
         let mut behavior = HashMap::new();
@@ -1139,6 +1191,7 @@ mod tests {
         sf1.realization_from_behavior(&behavior)
     }
 
+    /// Computes restricted Nash response.
     fn rnr(y_fix: &[f64], p: f64) -> RestrictedNashResult {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -1147,6 +1200,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that restricted Nash response p zero is the blueprint value.
     fn rnr_p_zero_is_the_blueprint_value() {
         let sol = rnr(&always_fold_realization(), 0.0);
         assert!(
@@ -1159,6 +1213,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that restricted Nash response p one matches best response.
     fn rnr_p_one_matches_best_response() {
         let y = always_fold_realization();
         let sol = rnr(&y, 1.0);
@@ -1173,6 +1228,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that restricted Nash response exploitation is monotone in p.
     fn rnr_exploitation_is_monotone_in_p() {
         let y = always_fold_realization();
         let payoff = build_kuhn_payoff();
@@ -1189,6 +1245,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that restricted Nash response safety can drop below game value.
     fn rnr_safety_can_drop_below_game_value() {
         let y = always_fold_realization();
         let aggressive = rnr(&y, 1.0);
@@ -1200,6 +1257,7 @@ mod tests {
         );
     }
 
+    /// Compute coefficients for Kuhn faces bet probe.
     fn kuhn_faces_bet_probe_coeffs() -> Vec<f64> {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -1212,6 +1270,7 @@ mod tests {
         crate::probe::probe_reach_coeffs(&crate::kuhn::Kuhn, &sf0, &HashMap::new(), &weights)
     }
 
+    /// Solve probe.
     fn solve_probe(
         coeffs: &[f64],
         v_ref: f64,
@@ -1226,11 +1285,13 @@ mod tests {
         robust_safe_response_probe(&sf0, &sf1, &payoff, &cs, v_ref, eps_safe, coeffs, beta, rho)
     }
 
+    /// Computes info gain.
     fn info_gain(coeffs: &[f64], x: &[f64]) -> f64 {
         coeffs.iter().zip(x).map(|(c, xi)| c * xi).sum()
     }
 
     #[test]
+    /// Verifies that probe linear program delegates to passive when beta and rho zero.
     fn probe_lp_delegates_to_passive_when_beta_and_rho_zero() {
         let coeffs = kuhn_faces_bet_probe_coeffs();
         let passive = robust_safe_response_kuhn(&HashMap::new(), KUHN_VALUE, 0.0);
@@ -1242,6 +1303,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that probe linear program with zero budget stays safe.
     fn probe_lp_with_zero_budget_stays_safe() {
         let coeffs = kuhn_faces_bet_probe_coeffs();
         let probe = solve_probe(&coeffs, KUHN_VALUE, 0.0, 10.0, 0.0);
@@ -1256,6 +1318,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that probe increases information gain with budget.
     fn probe_increases_information_gain_with_budget() {
         let coeffs = kuhn_faces_bet_probe_coeffs();
         let passive = robust_safe_response_kuhn(&HashMap::new(), KUHN_VALUE, 0.0);
@@ -1274,6 +1337,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that probe budget can trade safety for information.
     fn probe_budget_can_trade_safety_for_information() {
         let coeffs = kuhn_faces_bet_probe_coeffs();
         let rho = 0.5;
@@ -1288,6 +1352,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that confidence duals are nonnegative with one per row.
     fn confidence_duals_are_nonnegative_with_one_per_row() {
         let sf1 = compile_kuhn(1);
         let mut intervals = HashMap::new();
@@ -1305,6 +1370,7 @@ mod tests {
         assert!(sol.confidence_duals.iter().any(|&d| d > 1e-9));
     }
 
+    /// Computes always fold behavior.
     fn always_fold_behavior() -> HashMap<String, Vec<f64>> {
         let sf1 = compile_kuhn(1);
         let mut m = HashMap::new();
@@ -1314,6 +1380,7 @@ mod tests {
         m
     }
 
+    /// Computes guarded Kuhn.
     fn guarded_kuhn(
         intervals: &HashMap<String, Vec<(f64, f64)>>,
         y_hat_behavior: &HashMap<String, Vec<f64>>,
@@ -1341,6 +1408,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that guard with huge slack recovers point best response.
     fn guard_with_huge_slack_recovers_point_best_response() {
         let sol = guarded_kuhn(
             &HashMap::new(),
@@ -1358,6 +1426,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that guard with honest wide set kills phantom and stays maximin safe.
     fn guard_with_honest_wide_set_kills_phantom_and_stays_maximin_safe() {
         let guarded = guarded_kuhn(
             &HashMap::new(),
@@ -1383,6 +1452,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that guard linear program respects the hard floor.
     fn guard_lp_respects_the_hard_floor() {
         let rho = 0.25;
         let sol = guarded_kuhn(

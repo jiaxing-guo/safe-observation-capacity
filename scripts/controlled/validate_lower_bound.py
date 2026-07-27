@@ -1,4 +1,4 @@
-""
+"""Validate lower bound. See supplementary Additional Experiments."""
 
 from collections import defaultdict
 
@@ -20,11 +20,12 @@ RHOS = [0.1, 0.3]
 
 
 def _base(sf1):
+    """Compute base for the validate lower bound workflow."""
     return {i.label: [0.5, 0.5] for i in sf1.info_sets}
 
 
 def _two_point(sf1, eps):
-    ""
+    """Compute two point for the validate lower bound workflow."""
     y0, y1 = _base(sf1), _base(sf1)
 
     y0[TARGET[0]] = [0.5 + eps, 0.5 - eps]
@@ -35,13 +36,15 @@ def _two_point(sf1, eps):
 
 
 def _real(beh):
+    """Compute real for the validate lower bound workflow."""
     return list(Opponent(name="x", behavior=beh, game=GAME).realization())
 
 
 def _tv_public(sf1, y0r, y1r):
-    ""
+    """Compute tv public for the validate lower bound workflow."""
 
     def summed(yr):
+        """Compute summed for the validate lower bound workflow."""
         out = defaultdict(float)
         for info in sf1.info_sets:
             hist = info.label.split(":", 1)[1]
@@ -54,7 +57,7 @@ def _tv_public(sf1, y0r, y1r):
 
 
 def _reveal_diff(x_real, y0r, y1r, sf1):
-    ""
+    """Compute reveal diff for the validate lower bound workflow."""
     sd = agent_showdown_reach(x_real, game=GAME)
     by_label = {i.label: i for i in sf1.info_sets}
     tot = 0.0
@@ -73,6 +76,7 @@ def _reveal_diff(x_real, y0r, y1r, sf1):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf1 = compile_game(GAME, 1)
     payoff = build_payoff(GAME)
     bp = solve_blueprint(GAME, method="lp")

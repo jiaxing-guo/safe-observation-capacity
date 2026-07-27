@@ -1,4 +1,4 @@
-""
+"""Regression tests for test sim. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -7,11 +7,13 @@ from safe_observation.sequence_form import compile_kuhn
 
 
 def _uniform(player: int) -> dict[str, list[float]]:
+    """Compute uniform for the test sim workflow."""
     sf = compile_kuhn(player)
     return {info.label: [0.5, 0.5] for info in sf.info_sets}
 
 
 def test_deterministic_for_fixed_seed():
+    """Verify that deterministic for fixed seed."""
     x1, y2 = _uniform(0), _uniform(1)
     a = native.simulate("kuhn", x1, y2, 1000, 2026)
     b = native.simulate("kuhn", x1, y2, 1000, 2026)
@@ -19,6 +21,7 @@ def test_deterministic_for_fixed_seed():
 
 
 def test_different_seeds_differ():
+    """Verify that different seeds differ."""
     x1, y2 = _uniform(0), _uniform(1)
     a = native.simulate("kuhn", x1, y2, 1000, 2026)
     b = native.simulate("kuhn", x1, y2, 1000, 2027)
@@ -26,6 +29,7 @@ def test_different_seeds_differ():
 
 
 def test_counts_are_length_two_and_bounded():
+    """Verify that counts are length two and bounded."""
     x1, y2 = _uniform(0), _uniform(1)
     total_payoff, counts = native.simulate("kuhn", x1, y2, 5000, 2026)
     visits = 0
@@ -38,6 +42,7 @@ def test_counts_are_length_two_and_bounded():
 
 
 def test_always_pass_opponent_never_bets():
+    """Verify that always pass opponent never bets."""
     x1 = _uniform(0)
     sf1 = compile_kuhn(1)
     y2 = {info.label: [1.0, 0.0] for info in sf1.info_sets}
@@ -46,7 +51,7 @@ def test_always_pass_opponent_never_bets():
 
 
 def test_empirical_frequency_approaches_true_bias():
-
+    """Verify that empirical frequency approaches true bias."""
     x1 = _uniform(0)
     sf1 = compile_kuhn(1)
     y2 = {info.label: [0.7, 0.3] for info in sf1.info_sets}

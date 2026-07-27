@@ -1,4 +1,4 @@
-""
+"""Evaluate the MDP observation experiment. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ DELTA = 0.1
 
 
 def build_mdp(depth: int, gamma: float = GAMMA) -> dict:
-    ""
+    """Build MDP for the evaluate MDP observation workflow."""
     safe = 1
     gate0 = 2
     target = 2 + depth
@@ -50,7 +50,7 @@ def build_mdp(depth: int, gamma: float = GAMMA) -> dict:
 
 
 def _lp_matrices(mdp: dict):
-    ""
+    """Compute linear program matrices for the evaluate MDP observation workflow."""
     trans, nu, gamma = mdp["trans"], mdp["nu"], mdp["gamma"]
     n_states, target = mdp["n_states"], mdp["target"]
     keys = sorted(trans.keys())
@@ -71,7 +71,7 @@ def _lp_matrices(mdp: dict):
 
 
 def _reward_max(mdp: dict) -> float:
-    ""
+    """Compute reward max for the evaluate MDP observation workflow."""
     keys, A_flow, b_flow, r_vec, _ = _lp_matrices(mdp)
     res = linprog(
         -r_vec,
@@ -84,7 +84,7 @@ def _reward_max(mdp: dict) -> float:
 
 
 def _capacity(mdp: dict, v_ref: float, rho: float):
-    ""
+    """Compute capacity for the evaluate MDP observation workflow."""
     keys, A_flow, b_flow, r_vec, occT = _lp_matrices(mdp)
 
     A_ub = (-r_vec).reshape(1, -1)
@@ -110,6 +110,7 @@ def _capacity(mdp: dict, v_ref: float, rho: float):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print("# Probe: safe-RL occupancy-measure capacity coupling (3rd convex body)\n")
     out = {"gamma": GAMMA, "rhos": RHOS, "sigma": SIGMA, "delta": DELTA, "depths": {}}
 

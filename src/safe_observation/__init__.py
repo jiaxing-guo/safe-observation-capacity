@@ -1,4 +1,4 @@
-""
+"""Public interfaces for safe observation. See supplementary Reproducibility for its role in the release workflow."""
 
 from importlib.metadata import PackageNotFoundError, version as _pkg_version
 

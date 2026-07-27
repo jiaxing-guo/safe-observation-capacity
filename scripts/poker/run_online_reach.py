@@ -1,4 +1,4 @@
-""
+"""Run the online reach experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -42,6 +42,7 @@ OUT = Path(os.environ.get("OR_OUT", "results/online_reach_holdem.json"))
 
 
 def _opponent_for_game(game: str, opponent_name: str, sf1):
+    """Compute opponent for game for the run online reach workflow."""
     if game.startswith("holdem_tr"):
         if _build_turn_river_opponents is None:
             raise RuntimeError("turn-river opponent builder is unavailable")
@@ -61,6 +62,7 @@ def _opponent_for_game(game: str, opponent_name: str, sf1):
 
 
 def _fold_idx(sf1) -> dict[str, int]:
+    """Compute fold idx for the run online reach workflow."""
     out: dict[str, int] = {}
     for info in sf1.info_sets:
         for i, (a, _) in enumerate(info.children):
@@ -71,12 +73,13 @@ def _fold_idx(sf1) -> dict[str, int]:
 
 
 def _accumulate_reach(omega_acc: dict[str, float], omega_t: dict[str, float]) -> None:
+    """Compute accumulate reach for the run online reach workflow."""
     for label, w in omega_t.items():
         omega_acc[label] = omega_acc.get(label, 0.0) + w
 
 
 def _showdown_boxes(ev_point, omega_acc, fold_idx):
-    ""
+    """Compute showdown boxes for the run online reach workflow."""
     labels = list(ev_point.labels)
     n_boxes = sum(
         1
@@ -111,7 +114,7 @@ def _showdown_boxes(ev_point, omega_acc, fold_idx):
 
 
 def _solve_arm(arm, groups, pub_intervals, boxes, omega_acc, v_ref, game):
-    ""
+    """Solve arm for the run online reach workflow."""
     if arm == "core":
         resp = robust_safe_response_public(
             groups,
@@ -176,6 +179,7 @@ def _solve_arm(arm, groups, pub_intervals, boxes, omega_acc, v_ref, game):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)

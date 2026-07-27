@@ -1,4 +1,4 @@
-""
+"""Render identification coverage. See Experiments and supplementary Additional Experiments."""
 
 import json
 from pathlib import Path
@@ -16,6 +16,7 @@ data = json.loads(open(f"results/cid_coverage_{GAME}.json").read())
 
 
 def coords(leak: str, key: str) -> str:
+    """Serialize the selected observations as plotting coordinates."""
     by_n = data[leak]["by_N"]
     return "".join(
         f"({int(n)},{by_n[n][key]:.6g})" for n in sorted(by_n, key=lambda s: int(s))

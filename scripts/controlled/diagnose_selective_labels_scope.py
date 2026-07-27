@@ -1,4 +1,4 @@
-""
+"""Diagnose selective labels scope. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ N = 100_000
 
 
 def consistent_model(m=30):
+    """Compute consistent model for the diagnose selective labels scope workflow."""
     s = np.linspace(0.0, 1.0, m)
     p = np.full(m, 1.0 / m)
     gem = (s >= 0.40) & (s <= 0.66)
@@ -43,7 +44,7 @@ def consistent_model(m=30):
 
 
 def active_broad(model, rho, N, seed, target_set):
-    ""
+    """Compute active broad for the diagnose selective labels scope workflow."""
     rng = np.random.default_rng(seed + 777)
     m = model["m"]
     pi_probe = D.reach_probe(D._G["inst_P"], target_set, rho, U0=D._G["W_star"])
@@ -67,6 +68,7 @@ def active_broad(model, rho, N, seed, target_set):
 
 
 def main():
+    """Run the command-line entry point."""
     D.M = 30
     D._build_model = consistent_model
     D._init()

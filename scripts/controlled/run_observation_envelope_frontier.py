@@ -1,4 +1,4 @@
-""
+"""Run the observation envelope frontier experiment. See supplementary Additional Experiments."""
 
 import json
 import math
@@ -50,7 +50,7 @@ def _population_stores(
     agent_behavior: dict[str, list[float]],
     opp_behavior: dict[str, list[float]],
 ) -> tuple[OpponentEvidenceStore, OpponentEvidenceStore]:
-    ""
+    """Compute population stores for the run observation envelope frontier workflow."""
     ev_point = OpponentEvidenceStore.for_game(game)
     ev_public = OpponentEvidenceStore.for_game(game)
     _pay, show, fold = native.simulate_showdown(
@@ -67,7 +67,7 @@ def _population_stores(
 def _box_intervals(
     center: dict[str, list[float]], radius: float, labels: set[str]
 ) -> dict[str, list[tuple[float, float]]]:
-    ""
+    """Compute the box intervals for the run observation envelope frontier workflow."""
     box: dict[str, list[tuple[float, float]]] = {}
     for label, dist in center.items():
         if label not in labels:
@@ -81,7 +81,7 @@ def _covering_radius(
     behavior: dict[str, list[float]],
     omega: dict[str, float],
 ) -> float:
-    ""
+    """Compute covering radius for the run observation envelope frontier workflow."""
     d = 0.0
     for label, dist in behavior.items():
         if omega.get(label, 0.0) <= 0.0:
@@ -106,6 +106,7 @@ def _sweep_family(
     y_star: list[float],
     cover_r: float,
 ) -> list[dict]:
+    """Compute sweep family for the run observation envelope frontier workflow."""
     cells: list[dict] = []
     for r in RADII:
         box = _box_intervals(center, r, labels)
@@ -137,6 +138,7 @@ def _sweep_family(
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
@@ -275,7 +277,7 @@ def main() -> None:
 
 
 def _honest_cert(cells: list[dict], cover_r: float) -> dict:
-    ""
+    """Compute honest cert for the run observation envelope frontier workflow."""
     honest_r = None
     honest_ell = None
     for c in cells:
@@ -293,6 +295,7 @@ def _honest_cert(cells: list[dict], cover_r: float) -> dict:
 
 
 def _fmt_curve(cells: list[dict], key: str) -> str:
+    """Compute fmt curve for the run observation envelope frontier workflow."""
     parts = []
     for c in cells:
         if not c["feasible"]:
@@ -304,6 +307,7 @@ def _fmt_curve(cells: list[dict], key: str) -> str:
 
 
 def _print_focus(rows: list[dict]) -> None:
+    """Compute print focus for the run observation envelope frontier workflow."""
     by_name = {r["opponent"]: r for r in rows}
     rstr = " ".join(f"{r:>5.2f} " for r in RADII)
     for name, note in FOCUS.items():

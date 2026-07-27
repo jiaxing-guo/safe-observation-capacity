@@ -1,4 +1,4 @@
-""
+"""Run the safety ledger ablation experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 from pathlib import Path
@@ -16,6 +16,7 @@ OUT = Path("results/redundancy/ledger_ablation_leduc.json")
 
 
 def _run(debt_max: float) -> dict:
+    """Run the configured experiment for the run safety ledger ablation workflow."""
     return run_showdown_comparison(
         leduc_opponent_suite(),
         rounds=ROUNDS,
@@ -34,6 +35,7 @@ def _run(debt_max: float) -> dict:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print("running Leduc suite: ledger ON (debt_max=3.0)...", flush=True)
     on = _run(LEDGER_ON)
     print("running Leduc suite: ledger OFF (debt_max=inf)...", flush=True)

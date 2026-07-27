@@ -1,4 +1,4 @@
-""
+"""Public interfaces for agents. See Safe Active De-censoring and supplementary Algorithms."""
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -21,7 +21,7 @@ from ..timing import StageTimer
 
 @dataclass
 class Decision:
-    ""
+    """Represent decision for the init workflow."""
 
     realization: tuple[float, ...]
     behavior: dict[str, list[float]]
@@ -39,7 +39,7 @@ class Decision:
 
 
 class OnlineSafeExploitAgent:
-    ""
+    """Implement the online safe exploit agent."""
 
     def __init__(
         self,
@@ -54,6 +54,7 @@ class OnlineSafeExploitAgent:
         probe_budget: ProbeBudget | None = None,
         importance_mode: str = "uniform",
     ) -> None:
+        """Initialize the online safe exploit agent."""
         if monitoring not in ("full", "public"):
             raise ValueError(
                 f"unknown monitoring {monitoring!r}; expected 'full' or 'public'"
@@ -84,7 +85,7 @@ class OnlineSafeExploitAgent:
         self.evidence = OpponentEvidenceStore.for_game(game)
 
     def select(self) -> Decision:
-        ""
+        """Select the next floor-safe response."""
         groups: dict[str, list[str]] = {}
         with self.timer.stage("confidence_build"):
             if self.monitoring == "public":
@@ -146,7 +147,7 @@ class OnlineSafeExploitAgent:
     def _select_probing(
         self, intervals: Mapping[str, list[tuple[float, float]]]
     ) -> Decision:
-        ""
+        """Select probing for the init workflow."""
         opp_behavior = {
             label: list(self.evidence.p_hat(label)) for label in self.evidence.labels
         }
@@ -215,7 +216,7 @@ class OnlineSafeExploitAgent:
         )
 
     def observe(self, p2_counts: Mapping[str, Sequence[int]]) -> None:
-        ""
+        """Update state from newly observed opponent actions."""
         for label, counts in p2_counts.items():
             self.evidence.record(label, counts)
 

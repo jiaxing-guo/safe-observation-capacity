@@ -1,4 +1,4 @@
-""
+"""Validate observation capacity. See Safe Active De-censoring and supplementary Algorithms."""
 
 import json
 import statistics
@@ -40,6 +40,7 @@ WORKERS = 10
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     suite = holdem_showdown_opponent_suite()
     bp = solve_blueprint(GAME, method="lp")
     v_ref = bp.value

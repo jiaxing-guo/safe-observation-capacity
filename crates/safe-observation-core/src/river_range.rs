@@ -1,8 +1,11 @@
+//! River range algorithms for safe observation. See Experiments and supplementary Certification at the Unbucketed River.
+
 use std::collections::HashMap;
 
 use crate::hand_eval::card_str;
 use crate::holdem::{HoldemRules, HoldemState, RiverEndgame};
 
+/// Enumerates the supported pub node variants.
 pub enum PubNode {
     Decision {
         player: usize,
@@ -20,11 +23,14 @@ pub enum PubNode {
     },
 }
 
+/// Stores state for public tree.
 pub struct PublicTree {
     pub nodes: Vec<PubNode>,
 }
 
+/// Implements operations for `PublicTree`.
 impl PublicTree {
+    /// Build the configured game or confidence object.
     pub fn build(rules: &HoldemRules) -> Self {
         let mut root = rules.root();
         root.s0 = Some(0);
@@ -34,6 +40,7 @@ impl PublicTree {
         Self { nodes }
     }
 
+    /// Build from.
     fn build_from(rules: &HoldemRules, s: &HoldemState, nodes: &mut Vec<PubNode>) -> usize {
         if let Some(f) = s.folder {
             let id = nodes.len();
@@ -68,6 +75,7 @@ impl PublicTree {
         id
     }
 
+    /// Computes num decisions.
     pub fn num_decisions(&self, player: usize) -> usize {
         self.nodes
             .iter()
@@ -75,6 +83,7 @@ impl PublicTree {
             .count()
     }
 
+    /// Computes num action slots.
     pub fn num_action_slots(&self, player: usize) -> usize {
         self.nodes
             .iter()
@@ -90,6 +99,7 @@ impl PublicTree {
     }
 }
 
+/// Stores state for range game.
 pub struct RangeGame<'a> {
     pub(crate) game: &'a RiverEndgame,
 
@@ -102,7 +112,9 @@ pub struct RangeGame<'a> {
     pub(crate) inv_deals: f64,
 }
 
+/// Implements operations for `RangeGame<'a>`.
 impl<'a> RangeGame<'a> {
+    /// Constructs a new value from the supplied configuration.
     pub fn new(game: &'a RiverEndgame) -> Self {
         let tree = PublicTree::build(&game.rules());
         let same_of = |a: usize, b: usize| -> Vec<Option<usize>> {
@@ -129,20 +141,24 @@ impl<'a> RangeGame<'a> {
         }
     }
 
+    /// Computes combos.
     pub fn combos(&self, player: usize) -> usize {
         self.game.range(player).len()
     }
 
+    /// Computes compatible.
     pub fn compatible(&self, i: usize, j: usize) -> bool {
         let a = self.game.range(0)[i];
         let b = self.game.range(1)[j];
         a[0] != b[0] && a[0] != b[1] && a[1] != b[0] && a[1] != b[1]
     }
 
+    /// Computes deal weight.
     pub fn deal_weight(&self) -> f64 {
         self.inv_deals
     }
 
+    /// Compile sequence form.
     pub fn compile_sequence_form(&self, player: usize) -> crate::sequence_form::SequenceForm {
         use crate::sequence_form::InfoSet;
         let n = self.combos(player);
@@ -193,11 +209,13 @@ impl<'a> RangeGame<'a> {
         crate::sequence_form::SequenceForm::from_parts(player, sequences, info_sets)
     }
 
+    /// Computes label.
     pub fn label(&self, player: usize, k: usize, hist: &str) -> String {
         let h = self.game.range(player)[k];
         format!("{}{}|{}", card_str(h[0]), card_str(h[1]), hist)
     }
 
+    /// Computes bilinear from behavior.
     pub fn bilinear_from_behavior(
         &self,
         b0: &HashMap<String, Vec<f64>>,
@@ -208,6 +226,7 @@ impl<'a> RangeGame<'a> {
         self.eval_node(0, &r0, &r1, b0, b1)
     }
 
+    /// Computes eval node.
     fn eval_node(
         &self,
         id: usize,
@@ -257,6 +276,7 @@ impl<'a> RangeGame<'a> {
         }
     }
 
+    /// Computes compat sum.
     pub fn compat_sum(&self, r0: &[f64], r1: &[f64]) -> f64 {
         let t0: f64 = r0.iter().sum();
         let t1: f64 = r1.iter().sum();
@@ -279,6 +299,7 @@ impl<'a> RangeGame<'a> {
         t0 * t1 - one_shared + both_shared
     }
 
+    /// Computes fold masses.
     pub fn fold_masses(&self, my: usize, opp_reach: &[f64]) -> Vec<f64> {
         let opp = 1 - my;
         let t: f64 = opp_reach.iter().sum();
@@ -298,6 +319,7 @@ impl<'a> RangeGame<'a> {
             .collect()
     }
 
+    /// Computes showdown masses.
     pub fn showdown_masses(&self, my: usize, opp_reach: &[f64]) -> (Vec<f64>, Vec<f64>) {
         let opp = 1 - my;
         let my_scores = self.game.scores(my);
@@ -358,6 +380,7 @@ impl<'a> RangeGame<'a> {
         (below, above)
     }
 
+    /// Computes terminal values.
     pub fn terminal_values(&self, my: usize, node: &PubNode, opp_reach: &[f64]) -> Vec<f64> {
         match node {
             PubNode::Fold { folder, committed } => {
@@ -386,6 +409,7 @@ impl<'a> RangeGame<'a> {
         }
     }
 
+    /// Computes showdown sum naive.
     fn showdown_sum_naive(&self, r0: &[f64], r1: &[f64], committed: [u32; 2]) -> f64 {
         let range0 = self.game.range(0);
         let range1 = self.game.range(1);
@@ -416,11 +440,15 @@ impl<'a> RangeGame<'a> {
 }
 
 #[cfg(test)]
+/// Provides shared fixtures for this module's regression tests.
 pub(crate) mod test_util {
     use super::*;
 
+    /// Stores state for split mix64.
     pub struct SplitMix64(pub u64);
+    /// Implements operations for `SplitMix64`.
     impl SplitMix64 {
+        /// Draw the next uniform floating-point sample.
         pub fn next_f64(&mut self) -> f64 {
             self.0 = self.0.wrapping_add(0x9E3779B97F4A7C15);
             let mut z = self.0;
@@ -431,6 +459,7 @@ pub(crate) mod test_util {
         }
     }
 
+    /// Computes random behavior.
     pub fn random_behavior(rg: &RangeGame, player: usize, seed: u64) -> HashMap<String, Vec<f64>> {
         let mut rng = SplitMix64(seed);
         let mut out = HashMap::new();
@@ -459,12 +488,14 @@ pub(crate) mod test_util {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::test_util::{random_behavior, SplitMix64};
     use super::*;
     use crate::holdem::{build_holdem, canonical_holdem, compile_holdem};
 
     #[test]
+    /// Verifies that public tree matches sequence form sizes on compact river.
     fn public_tree_matches_sequence_form_sizes_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -479,6 +510,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that labels resolve in sequence form on compact river.
     fn labels_resolve_in_sequence_form_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -503,6 +535,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that bilinear matches exact payoff on compact river.
     fn bilinear_matches_exact_payoff_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -525,6 +558,7 @@ mod tests {
 
     #[test]
     #[ignore = "full river smoke timing; run explicitly in release mode"]
+    /// Verifies that full river smoke full river bilinear.
     fn full_river_smoke_full_river_bilinear() {
         use crate::hand_eval::card;
         use crate::holdem::RiverEndgame;
@@ -560,6 +594,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that showdown masses match naive on compact river.
     fn showdown_masses_match_naive_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -596,6 +631,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that fold masses match naive on compact river.
     fn fold_masses_match_naive_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -617,6 +653,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that direct sequence form matches generic on compact river.
     fn direct_sequence_form_matches_generic_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -638,6 +675,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that compat fast path matches naive on compact river.
     fn compat_fast_path_matches_naive_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);

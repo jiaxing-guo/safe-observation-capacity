@@ -1,4 +1,4 @@
-""
+"""Validate state probabilities. See supplementary Reproducibility for its role in the release workflow."""
 
 import json
 import tempfile
@@ -34,7 +34,7 @@ WANT = {
 
 
 def per_state_fold(opp_behavior, bp_behavior, fold_idx):
-    ""
+    """Compute per state fold for the validate state probabilities workflow."""
     ev = OpponentEvidenceStore.for_game(GAME)
     _p, show, fold = native.simulate_showdown(
         GAME, bp_behavior, opp_behavior, EPISODES, SEED
@@ -57,6 +57,7 @@ def per_state_fold(opp_behavior, bp_behavior, fold_idx):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     suite = holdem_showdown_opponent_suite()
     bp = solve_blueprint(GAME, method="lp")
     assert bp.realization is not None

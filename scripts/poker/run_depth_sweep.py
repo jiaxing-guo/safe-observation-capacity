@@ -1,4 +1,4 @@
-""
+"""Run the depth sweep experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -37,11 +37,12 @@ OUT = Path(os.environ.get("DEPTH_SWEEP_OUT", "results/depth_sweep_cchain.json"))
 
 
 def _round_of(hist: str) -> int:
-    ""
+    """Compute round of for the run depth sweep workflow."""
     return hist.count("/")
 
 
 def _is_fold_infoset(label: str, actions: dict[str, list[str]]) -> bool:
+    """Compute is fold information set."""
     return "f" in actions.get(label, [])
 
 
@@ -55,7 +56,7 @@ def _canonical_leak(
     leak_round: str,
     high_types_only: bool = True,
 ) -> dict[str, list[float]]:
-    ""
+    """Compute canonical leak for the run depth sweep workflow."""
     out = {label: list(dist) for label, dist in eq.items()}
     high = {str(t) for t in range(max(1, TYPES // 2), TYPES)}
     for info in sf1.info_sets:
@@ -86,7 +87,7 @@ def _random_chain_opponent(
     eq: dict[str, list[float]],
     depth: int,
 ) -> dict[str, list[float]]:
-    ""
+    """Construct the random chain opponent policy."""
     out = {label: list(dist) for label, dist in eq.items()}
     leak_round = rng.randrange(depth)
     types_hit = {str(t) for t in range(TYPES) if rng.random() < 0.5}
@@ -106,7 +107,7 @@ def _random_chain_opponent(
 
 
 def _solve_gap(game, sf1, info_by, payoff, v_ref, omega, fold_idx, groups, behavior):
-    ""
+    """Solve gap for the run depth sweep workflow."""
     y = list(Opponent(name="x", behavior=behavior, game=game).realization())
     pub = _population_public_intervals(groups, info_by, y, omega)
     obspub = _population_public_intervals(
@@ -141,6 +142,7 @@ def _solve_gap(game, sf1, info_by, payoff, v_ref, omega, fold_idx, groups, behav
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print(
         f"depth sweep  K={TYPES}  depths={DEPTHS}  rho={RHO}  "
         f"leak_round={LEAK_ROUND}  subpop={SUBPOP}",

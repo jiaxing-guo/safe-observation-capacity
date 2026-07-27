@@ -1,4 +1,4 @@
-""
+"""Run the public twin sweep experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ _TARGETS: list = []
 
 
 def _simplex_noise(dist, sigma, rng, floor=1e-3):
-    ""
+    """Compute simplex noise for the run public twin sweep workflow."""
     new = [p * (2.718281828 ** rng.gauss(0.0, sigma)) for p in dist]
     new = [max(floor, v) for v in new]
     s = sum(new)
@@ -53,12 +53,12 @@ def _simplex_noise(dist, sigma, rng, floor=1e-3):
 
 
 def _perturb_equilibrium(eq, sigma, rng):
-    ""
+    """Compute perturb equilibrium for the run public twin sweep workflow."""
     return {label: _simplex_noise(dist, sigma, rng) for label, dist in eq.items()}
 
 
 def _random_leak(eq, actions, rng):
-    ""
+    """Compute random leak for the run public twin sweep workflow."""
     river = rng.random() < 0.5
     rank_thr = rng.choice([0, 7, 9, 11])
     weight = rng.uniform(0.3, 0.6)
@@ -86,7 +86,7 @@ _RANK = {r: i for i, r in enumerate("23456789TJQKA")}
 
 
 def _masses(behavior, targets):
-    ""
+    """Compute masses for the run public twin sweep workflow."""
     yr = list(Opponent(name="b", behavior=behavior, game=GAME).realization())
     out = []
     for _hist, i1, i2 in targets:
@@ -95,6 +95,7 @@ def _masses(behavior, targets):
 
 
 def _g(behavior, rho):
+    """Compute g for the run public twin sweep workflow."""
     return (
         safety_constrained_best_response(
             behavior, v_ref=_VREF, eps_safe=rho, game=GAME
@@ -104,12 +105,13 @@ def _g(behavior, rho):
 
 
 def _init(sf, vref, bases, targets):
+    """Initialize process-local state for parallel experiment workers."""
     global _SF, _VREF, _BASES, _TARGETS
     _SF, _VREF, _BASES, _TARGETS = sf, vref, bases, targets
 
 
 def _task(key):
-    ""
+    """Execute one independently reproducible parallel task."""
     if key[0] == "gbar":
         _kind, base_id, rho = key
         _bid, _ens, _label, behavior, _m = _BASES[base_id]
@@ -126,6 +128,7 @@ def _task(key):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     global _SF, _VREF, _BASES, _TARGETS
     t0 = time.time()
     rng = random.Random(SEED)

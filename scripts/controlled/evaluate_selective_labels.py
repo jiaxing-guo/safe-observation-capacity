@@ -1,4 +1,4 @@
-""
+"""Evaluate the selective labels experiment. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ N_REPL = 12
 
 
 def _capacity_lp(rho: float):
-    ""
+    """Compute capacity linear program for the evaluate selective labels workflow."""
 
     res = linprog(
         c=[-1.0], A_ub=[[SLOPE]], b_ub=[rho], bounds=[(0.0, 1.0)], method="highs"
@@ -44,7 +44,7 @@ def _capacity_lp(rho: float):
 
 
 def _simulate(rho: float, seed: int):
-    ""
+    """Simulate trajectories under the configured policies."""
     rng = np.random.default_rng(seed)
     n = 200_000
     z = (rng.random(n) < P1).astype(int)
@@ -68,6 +68,7 @@ def _simulate(rho: float, seed: int):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print("# selective-labels faithfulness probe (Swing 1 gate)")
     print(
         f"# q1_true={Q1_TRUE:.4f}  q1_obs(passive)={Q1_OBS:.4f}  partial-ID P=[{L1:.3f},{U1:.3f}]"

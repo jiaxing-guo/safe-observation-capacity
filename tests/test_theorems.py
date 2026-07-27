@@ -1,4 +1,4 @@
-""
+"""Regression tests for test theorems. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -11,19 +11,20 @@ from safe_observation.opponents import leduc_static_biased_opponent
 
 
 def test_time_uniform_delta_sums_to_delta():
-
+    """Verify that time uniform delta sums to delta."""
     delta = 0.1
     total = sum(time_uniform_delta(delta, t) for t in range(1, 100_000))
     assert total == pytest.approx(delta, rel=1e-3)
 
 
 def test_time_uniform_delta_validates_round():
+    """Verify that time uniform delta validates round."""
     with pytest.raises(ValueError):
         time_uniform_delta(0.1, 0)
 
 
 def test_time_uniform_intervals_are_wider_than_spatial():
-
+    """Verify that time uniform intervals are wider than spatial."""
     store = OpponentEvidenceStore.for_game("leduc")
     for label in store.labels:
         store.record(label, [10] * len(store.p_hat(label)))
@@ -36,6 +37,7 @@ def test_time_uniform_intervals_are_wider_than_spatial():
 
 
 def test_coverage_union_bound_is_necessary_and_sufficient():
+    """Verify that coverage union bound is necessary and sufficient."""
     res = run_coverage_experiment(
         leduc_static_biased_opponent(),
         deltas=(0.1, 0.2),
@@ -56,7 +58,7 @@ def test_coverage_union_bound_is_necessary_and_sufficient():
 
 
 def test_coverage_no_union_degrades_with_delta():
-
+    """Verify that coverage no union degrades with delta."""
     res = run_coverage_experiment(
         leduc_static_biased_opponent(),
         deltas=(0.05, 0.3),
@@ -73,6 +75,7 @@ def test_coverage_no_union_degrades_with_delta():
 
 
 def test_finite_sample_gap_decays_and_is_bounded():
+    """Verify that finite sample gap decays and is bounded."""
     res = run_finite_sample_gap(
         leduc_static_biased_opponent(),
         rounds=40,
@@ -92,6 +95,7 @@ def test_finite_sample_gap_decays_and_is_bounded():
 
 
 def test_finite_sample_radius_shrinks_over_rounds():
+    """Verify that finite sample radius shrinks over rounds."""
     res = run_finite_sample_gap(
         leduc_static_biased_opponent(),
         rounds=40,

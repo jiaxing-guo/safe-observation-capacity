@@ -1,4 +1,4 @@
-""
+"""Analyze deployment. See Experiments and supplementary Additional Experiments."""
 
 import json
 import statistics as st
@@ -11,6 +11,7 @@ with open(f"results/sad_deploy_{GAME}.cells.jsonl") as _fh:
 
 
 def C(mode, opp, N):
+    """Compute c for the analyze deployment workflow."""
     return [
         c
         for c in cells
@@ -22,6 +23,7 @@ def C(mode, opp, N):
 
 
 def cval(mode, opp, N, key="certified"):
+    """Average one result field across matching experiment cells."""
     r = C(mode, opp, N)
     return st.mean(c[key] for c in r) if r else float("nan")
 
@@ -33,7 +35,7 @@ orr = {o: cval("oracle", o, 0, "realized") for o in DEV}
 
 
 def cap(cert_by_fam):
-
+    """Compute the certified share of the safe-exploitable gap."""
     return st.mean(
         (cert_by_fam[o] - cp[o]) / (orr[o] - cp[o]) for o in DEV if orr[o] > cp[o]
     )

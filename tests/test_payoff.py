@@ -1,4 +1,4 @@
-""
+"""Regression tests for test payoff. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -7,6 +7,7 @@ from safe_observation.sequence_form import compile_kuhn
 
 
 def test_shapes_and_nnz():
+    """Verify that shapes and nnz."""
     a = build_kuhn()
     assert a.nrows == 13
     assert a.ncols == 13
@@ -15,6 +16,7 @@ def test_shapes_and_nnz():
 
 
 def test_known_terminal_entries():
+    """Verify that known terminal entries."""
     a = build_kuhn()
     sf0 = compile_kuhn(0)
     sf1 = compile_kuhn(1)
@@ -34,6 +36,7 @@ def test_known_terminal_entries():
 
 
 def test_oracle_consistency():
+    """Verify that the payoff oracle agrees with the dense calculation."""
     a = build_kuhn()
     sf0 = compile_kuhn(0)
     sf1 = compile_kuhn(1)
@@ -52,6 +55,7 @@ def test_oracle_consistency():
 
 
 def test_length_validation():
+    """Verify that inconsistent vector lengths are rejected."""
     a = build_kuhn()
     with pytest.raises(ValueError):
         a.bilinear([0.0] * 5, [0.0] * 13)

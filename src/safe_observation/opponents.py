@@ -1,4 +1,4 @@
-""
+"""Opponents primitives for safe-observation experiments. See Safe Active De-censoring, Experiments, and supplementary Game Instances and Experimental Setup."""
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -18,25 +18,26 @@ _KING = 2
 
 @dataclass(frozen=True)
 class Opponent:
-    ""
+    """Implement the opponent for the opponents workflow."""
 
     name: str
     behavior: dict[str, list[float]]
     game: str = "kuhn"
 
     def realization(self) -> tuple[float, ...]:
-        ""
+        """Return the opponent policy as a sequence-form realization plan."""
         return compile_game(self.game, 1).realization_from_behavior(self.behavior)
 
 
 def _kuhn_p2_labels() -> list[str]:
+    """Compute Kuhn player-two labels for the opponents workflow."""
     return [info.label for info in compile_kuhn(1).info_sets]
 
 
 def static_biased_opponent(
     bet_prob: float = 0.1, name: str = "static_biased"
 ) -> Opponent:
-    ""
+    """Construct the static biased opponent policy."""
     if not 0.0 <= bet_prob <= 1.0:
         raise ValueError("bet_prob must be in [0, 1]")
     behavior = {label: [1.0 - bet_prob, bet_prob] for label in _kuhn_p2_labels()}
@@ -44,13 +45,13 @@ def static_biased_opponent(
 
 
 def always_fold_opponent() -> Opponent:
-    ""
+    """Construct the always fold opponent policy."""
     return static_biased_opponent(bet_prob=0.0, name="always_fold")
 
 
 @cache
 def equilibrium_opponent(iterations: int = 200_000) -> Opponent:
-    ""
+    """Construct the equilibrium opponent policy."""
     _value, strategy = native.solve_kuhn(iterations)
     behavior: dict[str, list[float]] = {}
     for label in _kuhn_p2_labels():
@@ -60,7 +61,7 @@ def equilibrium_opponent(iterations: int = 200_000) -> Opponent:
 
 
 def trap_opponent(weak_bet_prob: float = 0.15) -> Opponent:
-    ""
+    """Construct the trap opponent policy."""
     behavior: dict[str, list[float]] = {}
     for label in _kuhn_p2_labels():
         card = int(label.split(":")[0])
@@ -72,6 +73,7 @@ def trap_opponent(weak_bet_prob: float = 0.15) -> Opponent:
 
 
 def _normalize(weights: list[float]) -> list[float]:
+    """Normalize weights into a probability distribution."""
     total = sum(weights)
     if total <= 0.0:
         n = len(weights)
@@ -81,7 +83,7 @@ def _normalize(weights: list[float]) -> list[float]:
 
 @cache
 def _leduc_p2_actions() -> dict[str, tuple[str, ...]]:
-    ""
+    """Compute Leduc player-two actions for the opponents workflow."""
     return {
         info.label: tuple(a for a, _ in info.children)
         for info in compile_leduc(1).info_sets
@@ -91,7 +93,7 @@ def _leduc_p2_actions() -> dict[str, tuple[str, ...]]:
 def _leduc_behavior(
     rule: Callable[[str, tuple[str, ...]], list[float]],
 ) -> dict[str, list[float]]:
-    ""
+    """Compute Leduc behavior for the opponents workflow."""
     return {
         label: rule(label, actions) for label, actions in _leduc_p2_actions().items()
     }
@@ -100,13 +102,13 @@ def _leduc_behavior(
 def _passive_dist(
     actions: tuple[str, ...], raise_w: float, fold_w: float, call_w: float = 1.0
 ) -> list[float]:
-    ""
+    """Compute passive dist for the opponents workflow."""
     weight = {"c": call_w, "r": raise_w, "f": fold_w}
     return _normalize([weight[a] for a in actions])
 
 
 def _fold_else_check(actions: tuple[str, ...]) -> list[float]:
-    ""
+    """Compute fold else check for the opponents workflow."""
     target = "f" if "f" in actions else "c"
     return [1.0 if a == target else 0.0 for a in actions]
 
@@ -114,7 +116,7 @@ def _fold_else_check(actions: tuple[str, ...]) -> list[float]:
 def leduc_static_biased_opponent(
     raise_weight: float = 0.1, fold_weight: float = 0.5, name: str = "static_biased"
 ) -> Opponent:
-    ""
+    """Construct the Leduc static biased opponent policy."""
     behavior = _leduc_behavior(
         lambda _label, actions: _passive_dist(actions, raise_weight, fold_weight)
     )
@@ -122,7 +124,7 @@ def leduc_static_biased_opponent(
 
 
 def leduc_always_fold_opponent() -> Opponent:
-    ""
+    """Construct the Leduc always fold opponent policy."""
     return Opponent(
         name="always_fold",
         behavior=_leduc_behavior(lambda _label, actions: _fold_else_check(actions)),
@@ -132,7 +134,7 @@ def leduc_always_fold_opponent() -> Opponent:
 
 @cache
 def leduc_equilibrium_opponent() -> Opponent:
-    ""
+    """Construct the Leduc equilibrium opponent policy."""
     realization = native.blueprint_realization("leduc", 1)
     behavior = compile_leduc(1).behavior_from_realization(realization)
     return Opponent(name="equilibrium", behavior=behavior, game="leduc")
@@ -141,9 +143,10 @@ def leduc_equilibrium_opponent() -> Opponent:
 def leduc_trap_opponent(
     raise_weight: float = 0.1, fold_weight: float = 0.5
 ) -> Opponent:
-    ""
+    """Construct the Leduc trap opponent policy."""
 
     def rule(label: str, actions: tuple[str, ...]) -> list[float]:
+        """Construct the action distribution for one information set."""
         if label[0] == "K":
             target = "r" if "r" in actions else "c"
             return [1.0 if a == target else 0.0 for a in actions]
@@ -153,7 +156,7 @@ def leduc_trap_opponent(
 
 
 def leduc_near_equilibrium_opponent(eps: float = 0.1) -> Opponent:
-    ""
+    """Construct the Leduc near equilibrium opponent policy."""
     if not 0.0 <= eps <= 1.0:
         raise ValueError("eps must be in [0, 1]")
     eq = leduc_equilibrium_opponent().behavior
@@ -167,7 +170,7 @@ def leduc_near_equilibrium_opponent(eps: float = 0.1) -> Opponent:
 def leduc_private_state_leak_opponent(
     leak_rank: str = "J", leak: float = 0.6
 ) -> Opponent:
-    ""
+    """Construct the Leduc private state leak opponent policy."""
     if leak_rank not in ("J", "Q", "K"):
         raise ValueError("leak_rank must be one of 'J', 'Q', 'K'")
     eq = leduc_equilibrium_opponent().behavior
@@ -185,14 +188,14 @@ def leduc_private_state_leak_opponent(
 
 
 def _leduc_cap_facing_labels() -> list[str]:
-    ""
+    """Compute Leduc cap facing labels."""
     return [
         label for label, actions in _leduc_p2_actions().items() if actions == ("f", "c")
     ]
 
 
 def leduc_low_reach_leak_opponent(leak: float = 0.9) -> Opponent:
-    ""
+    """Construct the Leduc low reach leak opponent policy."""
     if not 0.0 <= leak <= 1.0:
         raise ValueError("leak must be in [0, 1]")
     eq = leduc_equilibrium_opponent().behavior
@@ -208,12 +211,12 @@ def leduc_low_reach_leak_opponent(leak: float = 0.9) -> Opponent:
 
 @cache
 def _goofspiel_p2_action_counts() -> dict[str, int]:
-    ""
+    """Compute goofspiel player-two action counts."""
     return {info.label: len(info.children) for info in compile_goofspiel(1).info_sets}
 
 
 def goofspiel_lowball_opponent() -> Opponent:
-    ""
+    """Construct the goofspiel lowball opponent policy."""
 
     behavior = {
         label: [1.0] + [0.0] * (k - 1)
@@ -223,7 +226,7 @@ def goofspiel_lowball_opponent() -> Opponent:
 
 
 def goofspiel_highball_opponent() -> Opponent:
-    ""
+    """Construct the goofspiel highball opponent policy."""
     behavior = {
         label: [0.0] * (k - 1) + [1.0]
         for label, k in _goofspiel_p2_action_counts().items()
@@ -232,7 +235,7 @@ def goofspiel_highball_opponent() -> Opponent:
 
 
 def goofspiel_uniform_opponent() -> Opponent:
-    ""
+    """Construct the goofspiel uniform opponent policy."""
     behavior = {
         label: [1.0 / k] * k for label, k in _goofspiel_p2_action_counts().items()
     }
@@ -241,7 +244,7 @@ def goofspiel_uniform_opponent() -> Opponent:
 
 @cache
 def goofspiel_equilibrium_opponent() -> Opponent:
-    ""
+    """Construct the goofspiel equilibrium opponent policy."""
     realization = native.blueprint_realization("goofspiel", 1)
     behavior = compile_goofspiel(1).behavior_from_realization(realization)
     return Opponent(name="equilibrium", behavior=behavior, game="goofspiel")
@@ -249,7 +252,7 @@ def goofspiel_equilibrium_opponent() -> Opponent:
 
 @cache
 def _holdem_p2_actions(game: str = "holdem") -> dict[str, tuple[str, ...]]:
-    ""
+    """Compute holdem player-two actions for the opponents workflow."""
     return {
         info.label: tuple(a for a, _ in info.children)
         for info in compile_game(game, 1).info_sets
@@ -258,7 +261,7 @@ def _holdem_p2_actions(game: str = "holdem") -> dict[str, tuple[str, ...]]:
 
 @cache
 def holdem_equilibrium_opponent(game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem equilibrium opponent policy."""
     realization = native.blueprint_realization(game, 1)
     behavior = compile_game(game, 1).behavior_from_realization(realization)
     return Opponent(name="equilibrium", behavior=behavior, game=game)
@@ -267,7 +270,7 @@ def holdem_equilibrium_opponent(game: str = "holdem") -> Opponent:
 def holdem_near_equilibrium_opponent(
     eps: float = 0.1, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem near equilibrium opponent policy."""
     if not 0.0 <= eps <= 1.0:
         raise ValueError("eps must be in [0, 1]")
     eq = holdem_equilibrium_opponent(game).behavior
@@ -281,7 +284,7 @@ def holdem_near_equilibrium_opponent(
 def _holdem_perturb_toward(
     target: str, weight: float, game: str = "holdem"
 ) -> dict[str, list[float]]:
-    ""
+    """Compute holdem perturb toward for the opponents workflow."""
     if not 0.0 <= weight <= 1.0:
         raise ValueError("weight must be in [0, 1]")
     eq = holdem_equilibrium_opponent(game).behavior
@@ -300,7 +303,7 @@ def _holdem_perturb_toward(
 
 
 def holdem_overfold_opponent(leak: float = 0.5, game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem overfold opponent policy."""
     return Opponent(
         name="overfold", behavior=_holdem_perturb_toward("f", leak, game), game=game
     )
@@ -309,7 +312,7 @@ def holdem_overfold_opponent(leak: float = 0.5, game: str = "holdem") -> Opponen
 def holdem_calling_station_opponent(
     leak: float = 0.6, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem calling station opponent policy."""
     return Opponent(
         name="calling_station",
         behavior=_holdem_perturb_toward("c", leak, game),
@@ -318,14 +321,14 @@ def holdem_calling_station_opponent(
 
 
 def holdem_maniac_opponent(leak: float = 0.4, game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem maniac opponent policy."""
     return Opponent(
         name="maniac", behavior=_holdem_perturb_toward("p", leak, game), game=game
     )
 
 
 def _holdem_deep_fold_lines(game: str = "holdem") -> set[str]:
-    ""
+    """Compute holdem deep fold lines."""
     lines: set[str] = set()
     for info in compile_game(game, 1).info_sets:
         hist = info.label.split("|", 1)[1]
@@ -336,7 +339,7 @@ def _holdem_deep_fold_lines(game: str = "holdem") -> set[str]:
 
 
 def holdem_low_reach_leak_opponent(leak: float = 0.9, game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem low reach leak opponent policy."""
     if not 0.0 <= leak <= 1.0:
         raise ValueError("leak must be in [0, 1]")
     eq = holdem_equilibrium_opponent(game).behavior
@@ -357,7 +360,7 @@ def holdem_low_reach_leak_opponent(leak: float = 0.9, game: str = "holdem") -> O
 
 
 def _holdem_shallow_fold_lines(game: str = "holdem") -> set[str]:
-    ""
+    """Compute holdem shallow fold lines."""
     lines: set[str] = set()
     for info in compile_game(game, 1).info_sets:
         hist = info.label.split("|", 1)[1]
@@ -368,7 +371,7 @@ def _holdem_shallow_fold_lines(game: str = "holdem") -> set[str]:
 
 
 def holdem_censored_fold_opponent(leak: float = 0.85, game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem censored fold opponent policy."""
     if not 0.0 <= leak <= 1.0:
         raise ValueError("leak must be in [0, 1]")
     eq = holdem_equilibrium_opponent(game).behavior
@@ -395,7 +398,7 @@ def _holdem_perturb_lines(
     hist_pred: Callable[[str], bool],
     game: str = "holdem",
 ) -> dict[str, list[float]]:
-    ""
+    """Compute holdem perturb lines for the opponents workflow."""
     if not 0.0 <= weight <= 1.0:
         raise ValueError("weight must be in [0, 1]")
     actions = _holdem_p2_actions(game)
@@ -416,7 +419,7 @@ def _holdem_perturb_lines(
 def _holdem_fold_and_call_behavior(
     fold_leak: float, call_leak: float, game: str = "holdem"
 ) -> dict[str, list[float]]:
-    ""
+    """Compute holdem fold and call behavior."""
     eq = holdem_equilibrium_opponent(game).behavior
     shallow = _holdem_shallow_fold_lines(game)
 
@@ -428,7 +431,7 @@ def _holdem_fold_and_call_behavior(
 def holdem_fold_and_call_opponent(
     fold_leak: float = 0.6, call_leak: float = 0.6, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem fold and call opponent policy."""
     return Opponent(
         name="fold_and_call",
         behavior=_holdem_fold_and_call_behavior(fold_leak, call_leak, game),
@@ -439,7 +442,7 @@ def holdem_fold_and_call_opponent(
 def holdem_fold_mild_call_opponent(
     fold_leak: float = 0.7, call_leak: float = 0.2, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem fold mild call opponent policy."""
     return Opponent(
         name="fold_mild_call",
         behavior=_holdem_fold_and_call_behavior(fold_leak, call_leak, game),
@@ -450,7 +453,7 @@ def holdem_fold_mild_call_opponent(
 def holdem_private_card_fold_opponent(
     leak: float = 0.7, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem private card fold opponent policy."""
     if not 0.0 <= leak <= 1.0:
         raise ValueError("leak must be in [0, 1]")
     eq = holdem_equilibrium_opponent(game).behavior
@@ -473,10 +476,12 @@ _RANK_TO_INT = {rank: idx for idx, rank in enumerate("23456789TJQKA")}
 
 
 def _card_from_str(card: str) -> tuple[int, str]:
+    """Compute card from str for the opponents workflow."""
     return _RANK_TO_INT[card[0]], card[1]
 
 
 def _holdem_board_strings(game: str = "holdem") -> tuple[str, ...]:
+    """Compute holdem board strings for the opponents workflow."""
     variant = game.removeprefix("holdem_") if game.startswith("holdem_") else ""
     boards = {
         "": ("As", "Ks", "Qd", "Jc", "9h"),
@@ -490,7 +495,7 @@ def _holdem_board_strings(game: str = "holdem") -> tuple[str, ...]:
 
 
 def _straight_high(ranks: set[int]) -> int | None:
-
+    """Compute straight high for the opponents workflow."""
     work = set(ranks)
     if 12 in work:
         work.add(-1)
@@ -501,6 +506,7 @@ def _straight_high(ranks: set[int]) -> int | None:
 
 
 def _holdem_7card_rank(cards: tuple[tuple[int, str], ...]) -> tuple[int, ...]:
+    """Compute holdem 7card rank for the opponents workflow."""
     ranks = sorted((rank for rank, _suit in cards), reverse=True)
     counts = {rank: ranks.count(rank) for rank in set(ranks)}
     by_suit: dict[str, list[int]] = {}
@@ -549,11 +555,13 @@ def _holdem_7card_rank(cards: tuple[tuple[int, str], ...]) -> tuple[int, ...]:
 
 
 def _holdem_hole(label: str) -> str:
+    """Compute holdem hole for the opponents workflow."""
     return label.split("|", 1)[0]
 
 
 @cache
 def _holdem_hole_classes(game: str = "holdem") -> dict[str, str]:
+    """Compute holdem hole classes for the opponents workflow."""
     board = tuple(_card_from_str(card) for card in _holdem_board_strings(game))
     holes = sorted({_holdem_hole(label) for label in _holdem_p2_actions(game)})
     ranked = []
@@ -574,11 +582,13 @@ def _holdem_hole_classes(game: str = "holdem") -> dict[str, str]:
 
 
 def _holdem_hole_class(label: str, game: str = "holdem") -> str:
+    """Compute holdem hole class for the opponents workflow."""
     return _holdem_hole_classes(game)[_holdem_hole(label)]
 
 
 @cache
 def _holdem_hole_percentiles(game: str = "holdem") -> dict[str, float]:
+    """Compute holdem hole percentiles for the opponents workflow."""
     board = tuple(_card_from_str(card) for card in _holdem_board_strings(game))
     holes = sorted({_holdem_hole(label) for label in _holdem_p2_actions(game)})
     ranked = []
@@ -592,6 +602,8 @@ def _holdem_hole_percentiles(game: str = "holdem") -> dict[str, float]:
 
 @dataclass(frozen=True)
 class _HoldemDecisionProfile:
+    """Represent holdem decision profile for the opponents workflow."""
+
     label: str
     hist: str
     hole: str
@@ -610,6 +622,7 @@ class _HoldemDecisionProfile:
 def _holdem_decision_profiles(
     game: str = "holdem",
 ) -> dict[str, _HoldemDecisionProfile]:
+    """Compute holdem decision profiles for the opponents workflow."""
     eq = holdem_equilibrium_opponent(game).behavior
     actions = _holdem_p2_actions(game)
     classes = _holdem_hole_classes(game)
@@ -642,6 +655,7 @@ def _holdem_decision_profiles(
 def _holdem_decision_profile(
     label: str, game: str = "holdem"
 ) -> _HoldemDecisionProfile:
+    """Compute holdem decision profile for the opponents workflow."""
     return _holdem_decision_profiles(game)[label]
 
 
@@ -653,6 +667,7 @@ def _holdem_perturb_by_profile(
     game: str = "holdem",
     action_pred: Callable[[tuple[str, ...]], bool] | None = None,
 ) -> dict[str, list[float]]:
+    """Compute holdem perturb by profile."""
     actions = _holdem_p2_actions(game)
     out: dict[str, list[float]] = {}
     for label, dist in behavior.items():
@@ -682,6 +697,7 @@ def _holdem_perturb_by_hand_class(
     game: str = "holdem",
     action_pred: Callable[[tuple[str, ...]], bool] | None = None,
 ) -> dict[str, list[float]]:
+    """Compute holdem perturb by hand class."""
     return _holdem_perturb_by_profile(
         behavior,
         target,
@@ -695,7 +711,7 @@ def _holdem_perturb_by_hand_class(
 def holdem_board_public_fold_opponent(
     leak: float = 0.65, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem board public fold opponent policy."""
     eq = holdem_equilibrium_opponent(game).behavior
     shallow = _holdem_shallow_fold_lines(game)
     behavior = _holdem_perturb_by_profile(
@@ -710,7 +726,7 @@ def holdem_board_public_fold_opponent(
 
 
 def holdem_public_fold_opponent(leak: float = 0.65, game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem public fold opponent policy."""
     opp = holdem_board_public_fold_opponent(leak=leak, game=game)
     return Opponent(name="public_fold", behavior=opp.behavior, game=game)
 
@@ -718,7 +734,7 @@ def holdem_public_fold_opponent(leak: float = 0.65, game: str = "holdem") -> Opp
 def holdem_board_public_call_opponent(
     leak: float = 0.55, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem board public call opponent policy."""
     behavior = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
         "c",
@@ -731,7 +747,7 @@ def holdem_board_public_call_opponent(
 
 
 def holdem_public_call_opponent(leak: float = 0.55, game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem public call opponent policy."""
     opp = holdem_board_public_call_opponent(leak=leak, game=game)
     return Opponent(name="public_call", behavior=opp.behavior, game=game)
 
@@ -739,7 +755,7 @@ def holdem_public_call_opponent(leak: float = 0.55, game: str = "holdem") -> Opp
 def holdem_board_public_aggression_opponent(
     leak: float = 0.4, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem board public aggression opponent policy."""
     behavior = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
         "p",
@@ -754,7 +770,7 @@ def holdem_board_public_aggression_opponent(
 def holdem_public_aggression_opponent(
     leak: float = 0.4, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem public aggression opponent policy."""
     opp = holdem_board_public_aggression_opponent(leak=leak, game=game)
     return Opponent(name="public_aggression", behavior=opp.behavior, game=game)
 
@@ -764,7 +780,7 @@ def holdem_board_marginal_overfold_opponent(
     min_headroom: float = 0.05,
     game: str = "holdem",
 ) -> Opponent:
-    ""
+    """Construct the holdem board marginal overfold opponent policy."""
     behavior = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
         "f",
@@ -786,7 +802,7 @@ def holdem_weak_hand_overfold_opponent(
     strong_leak: float = 0.0,
     game: str = "holdem",
 ) -> Opponent:
-    ""
+    """Construct the holdem weak hand overfold opponent policy."""
     _ = (weak_leak, strong_leak)
     return holdem_board_marginal_overfold_opponent(leak=medium_leak, game=game)
 
@@ -796,7 +812,7 @@ def holdem_board_bluffcatcher_station_opponent(
     min_headroom: float = 0.05,
     game: str = "holdem",
 ) -> Opponent:
-    ""
+    """Construct the holdem board bluffcatcher station opponent policy."""
     behavior = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
         "c",
@@ -818,7 +834,7 @@ def holdem_bluffcatcher_station_opponent(
     strong_call_leak: float = 0.15,
     game: str = "holdem",
 ) -> Opponent:
-    ""
+    """Construct the holdem bluffcatcher station opponent policy."""
     _ = (weak_call_leak, strong_call_leak)
     opp = holdem_board_bluffcatcher_station_opponent(leak=medium_call_leak, game=game)
     return Opponent(name="bluffcatcher_station", behavior=opp.behavior, game=game)
@@ -829,7 +845,7 @@ def holdem_board_polarized_maniac_opponent(
     min_headroom: float = 0.05,
     game: str = "holdem",
 ) -> Opponent:
-    ""
+    """Construct the holdem board polarized maniac opponent policy."""
     behavior = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
         "p",
@@ -852,7 +868,7 @@ def holdem_polarized_maniac_opponent(
     strong_raise_leak: float = 0.5,
     game: str = "holdem",
 ) -> Opponent:
-    ""
+    """Construct the holdem polarized maniac opponent policy."""
     _ = (weak_raise_leak, medium_raise_leak)
     opp = holdem_board_polarized_maniac_opponent(leak=strong_raise_leak, game=game)
     return Opponent(name="polarized_maniac", behavior=opp.behavior, game=game)
@@ -861,7 +877,7 @@ def holdem_polarized_maniac_opponent(
 def holdem_ambiguous_fold_marginal_opponent(
     leak: float = 0.75, min_headroom: float = 0.05, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem ambiguous fold marginal opponent policy."""
     behavior = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
         "f",
@@ -880,14 +896,14 @@ def holdem_ambiguous_fold_marginal_opponent(
 def holdem_ambiguous_fold_weak_opponent(
     leak: float = 0.75, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem ambiguous fold weak opponent policy."""
     return holdem_ambiguous_fold_marginal_opponent(leak=leak, game=game)
 
 
 def holdem_ambiguous_fold_strong_opponent(
     leak: float = 0.75, min_headroom: float = 0.05, game: str = "holdem"
 ) -> Opponent:
-    ""
+    """Construct the holdem ambiguous fold strong opponent policy."""
     behavior = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
         "f",
@@ -904,7 +920,7 @@ def holdem_ambiguous_fold_strong_opponent(
 
 
 def holdem_showdown_selection_trap_opponent(game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem showdown selection trap opponent policy."""
     shallow = _holdem_shallow_fold_lines(game)
     base = _holdem_perturb_by_profile(
         holdem_equilibrium_opponent(game).behavior,
@@ -934,7 +950,7 @@ def holdem_showdown_selection_trap_opponent(game: str = "holdem") -> Opponent:
 
 
 def holdem_mixed_public_private_opponent(game: str = "holdem") -> Opponent:
-    ""
+    """Construct the holdem mixed public private opponent policy."""
     shallow = _holdem_shallow_fold_lines(game)
     base = holdem_board_public_fold_opponent(leak=0.55, game=game).behavior
     behavior = _holdem_perturb_by_profile(
@@ -959,7 +975,7 @@ def holdem_population_opponent(
     game: str = "holdem",
     name: str | None = None,
 ) -> Opponent:
-    ""
+    """Construct the holdem population opponent policy."""
     if not 0.0 <= leak <= 1.0:
         raise ValueError("leak must be in [0, 1]")
     nm = name or f"pop_{archetype}_{int(round(leak * 100)):02d}"
@@ -985,7 +1001,7 @@ def holdem_population_sample(
     game: str = "holdem",
     leak_range: tuple[float, float] = (0.3, 0.9),
 ) -> dict[str, Opponent]:
-    ""
+    """Compute holdem population sample for the opponents workflow."""
     import random
 
     rng = random.Random(seed)
@@ -1004,7 +1020,7 @@ def holdem_population_sample(
 
 
 def opponent_suite() -> dict[str, Opponent]:
-    ""
+    """Compute opponent suite for the opponents workflow."""
     return {
         "equilibrium": equilibrium_opponent(),
         "static_biased": static_biased_opponent(),
@@ -1014,7 +1030,7 @@ def opponent_suite() -> dict[str, Opponent]:
 
 
 def leduc_opponent_suite() -> dict[str, Opponent]:
-    ""
+    """Compute Leduc opponent suite for the opponents workflow."""
     return {
         "equilibrium": leduc_equilibrium_opponent(),
         "near_equilibrium": leduc_near_equilibrium_opponent(),
@@ -1027,7 +1043,7 @@ def leduc_opponent_suite() -> dict[str, Opponent]:
 
 
 def goofspiel_opponent_suite() -> dict[str, Opponent]:
-    ""
+    """Compute goofspiel opponent suite for the opponents workflow."""
     return {
         "equilibrium": goofspiel_equilibrium_opponent(),
         "lowball": goofspiel_lowball_opponent(),
@@ -1037,7 +1053,7 @@ def goofspiel_opponent_suite() -> dict[str, Opponent]:
 
 
 def holdem_showdown_opponent_suite(game: str = "holdem") -> dict[str, Opponent]:
-    ""
+    """Compute holdem showdown opponent suite."""
     return {
         "equilibrium": holdem_equilibrium_opponent(game),
         "near_equilibrium": holdem_near_equilibrium_opponent(game=game),
@@ -1053,7 +1069,7 @@ def holdem_showdown_opponent_suite(game: str = "holdem") -> dict[str, Opponent]:
 
 
 def holdem_structured_opponent_suite(game: str = "holdem") -> dict[str, Opponent]:
-    ""
+    """Compute holdem structured opponent suite."""
     return {
         "equilibrium": holdem_equilibrium_opponent(game),
         "near_equilibrium": holdem_near_equilibrium_opponent(game=game),
@@ -1130,7 +1146,7 @@ _FACTORIES: dict[str, dict[str, Callable[..., Opponent]]] = {
 
 
 def opponent_from_spec(spec: Mapping[str, Any]) -> Opponent:
-    ""
+    """Compute opponent from spec for the opponents workflow."""
     params = dict(spec)
     game = params.pop("game", "kuhn")
     try:
@@ -1149,7 +1165,7 @@ def opponent_from_spec(spec: Mapping[str, Any]) -> Opponent:
 
 
 def best_response_value(opponent: Opponent) -> float:
-    ""
+    """Compute the best response value."""
     from .solvers import best_response
 
     return best_response(opponent.realization(), game=opponent.game).value

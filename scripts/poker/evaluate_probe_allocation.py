@@ -1,4 +1,4 @@
-""
+"""Evaluate the probe allocation experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -20,16 +20,19 @@ C_CERT = 0.25
 
 
 def _is_river(label: str) -> bool:
+    """Compute is river for the evaluate probe allocation workflow."""
     return "/" in label.split("|", 1)[1]
 
 
 def _depth_spread_leak(eq, actions):
-    ""
+    """Compute depth spread leak for the evaluate probe allocation workflow."""
 
     def turn_line(hole, hist, acts):
+        """Compute turn line for the evaluate probe allocation workflow."""
         return "/" not in hist and "f" in acts and _top_rank(hole) >= 9
 
     def river_line(hole, hist, acts):
+        """Compute river line for the evaluate probe allocation workflow."""
         return "/" in hist and "f" in acts and _top_rank(hole) >= 9
 
     leak = _perturb(eq, actions, turn_line, "f", 0.6)
@@ -38,7 +41,7 @@ def _depth_spread_leak(eq, actions):
 
 
 def _public_anomaly(sf1, omega_bp, y_ref, y_eq):
-    ""
+    """Compute public anomaly for the evaluate probe allocation workflow."""
     by_hist = defaultdict(list)
     for info in sf1.info_sets:
         by_hist[info.label.split("|", 1)[1]].append(info)
@@ -76,7 +79,10 @@ def _public_anomaly(sf1, omega_bp, y_ref, y_eq):
 
 
 def _spearman(xs, ys):
+    """Compute Spearman rank correlation between two score vectors."""
+
     def rank(v):
+        """Assign deterministic ranks to the supplied scores."""
         order = sorted(range(len(v)), key=lambda i: v[i])
         r = [0.0] * len(v)
         for pos, i in enumerate(order):
@@ -93,7 +99,7 @@ def _spearman(xs, ys):
 
 
 def _allocate(targets, score_key, budget):
-    ""
+    """Compute allocate for the evaluate probe allocation workflow."""
     ranked = sorted(targets, key=lambda t: t[score_key], reverse=True)
     spent = 0.0
     captured = 0.0
@@ -109,6 +115,7 @@ def _allocate(targets, score_key, budget):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf1 = compile_game(GAME, 1)
     bp = solve_blueprint(GAME, method="lp")
     eq = holdem_equilibrium_opponent(GAME).behavior

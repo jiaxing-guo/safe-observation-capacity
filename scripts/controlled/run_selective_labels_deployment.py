@@ -1,4 +1,4 @@
-""
+"""Run the selective labels deployment experiment. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ _G: dict = {}
 
 
 def _build_model():
-    ""
+    """Build model for the run selective labels deployment workflow."""
     m = M
     s = np.linspace(0.0, 1.0, m)
     p = np.full(m, 1.0 / m)
@@ -68,7 +68,7 @@ def _build_model():
 
 
 def _historical_logs(model, n, seed):
-    ""
+    """Compute historical logs for the run selective labels deployment workflow."""
     rng = np.random.default_rng(seed)
     m = model["m"]
     z = rng.choice(m, size=n, p=model["p"])
@@ -94,7 +94,7 @@ def _historical_logs(model, n, seed):
 
 
 def _partial_id(logs):
-    ""
+    """Compute partial identifier for the run selective labels deployment workflow."""
     m = M
     r, qobs, nobs = logs["r"], logs["qobs"], logs["nobs"]
     L = np.zeros(m)
@@ -110,6 +110,7 @@ def _partial_id(logs):
 
 
 def _init():
+    """Initialize process-local state for parallel experiment workers."""
     model = _build_model()
     logs = _historical_logs(model, LOG_N, LOG_SEED)
     L_P, U_P = _partial_id(logs)
@@ -135,7 +136,7 @@ def _init():
 
 
 def _passive_confidence(model, N, seed):
-    ""
+    """Construct confidence constraints for passive."""
     logs = _historical_logs(model, N, seed)
     m = model["m"]
     L = np.array(_G["L_P"])
@@ -153,7 +154,7 @@ def _passive_confidence(model, N, seed):
 
 
 def _active_confidence(model, rho, N, seed):
-    ""
+    """Construct confidence constraints for active."""
     rng = np.random.default_rng(seed + 777)
     inst_P = _G["inst_P"]
     m = model["m"]
@@ -181,28 +182,31 @@ def _active_confidence(model, rho, N, seed):
 
 
 def _certify(model, C_L, C_U, rho):
-    ""
+    """Compute certify for the run selective labels deployment workflow."""
     pi, cert = certified_safe_response(_G["inst_P"], C_L, C_U, rho, U0=_G["W_star"])
     return pi, cert
 
 
 def _realized(model, pi):
+    """Evaluate a realization plan against the selected opponent."""
     return float(np.sum(model["p"] * pi * (model["q_true"] - C)))
 
 
 def _coverage(model, C_L, C_U):
+    """Compute coverage for the run selective labels deployment workflow."""
     q = model["q_true"]
     return bool(np.all((q >= C_L - 1e-9) & (q <= C_U + 1e-9)))
 
 
 def _floor_violation(model, pi, rho):
-    ""
+    """Compute floor violation for the run selective labels deployment workflow."""
     inst_P = _G["inst_P"]
     W = robust_utility(inst_P, pi)[0]
     return bool(W < _G["W_star"] - rho - 1e-6)
 
 
 def _cell(args):
+    """Run one independently reproducible experiment cell."""
     method, rho, N, seed = args
     model = _G["model"]
     if method == "oracle":
@@ -233,6 +237,7 @@ def _cell(args):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     t0 = time.time()
     _init()
     print(f"# Safe active de-censoring deployment ladder (lending, m={M})")

@@ -1,4 +1,4 @@
-""
+"""Render full river report. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 from pathlib import Path
@@ -35,6 +35,7 @@ NCELL = sum(r["seeds"] for r in ed["rows"] if r["arm"] == "routed")
 
 
 def sub(template, mapping):
+    """Substitute named values into a report template."""
     for k, v in mapping.items():
         template = template.replace("@" + k + "@", v)
     leftover = re.findall(r"@[A-Z][A-Z0-9]*@", template)
@@ -43,6 +44,7 @@ def sub(template, mapping):
 
 
 def coords(leak, arm):
+    """Serialize the selected observations as plotting coordinates."""
     out = []
     for n in NS:
         r = rows[(leak, n, arm)]
@@ -106,14 +108,17 @@ fig = sub(
 
 
 def se_chip(v):
+    """Compute se chip for the render full river report workflow."""
     return ("\\pm" + f"{v:.3f}".lstrip("0")) if v >= 0.0005 else "\\pm.000"
 
 
 def cell(leak, n, arm="routed"):
+    """Run one independently reproducible experiment cell."""
     return f"${rows[(leak, n, arm)]['cert_mean']:.3f}$"
 
 
 def realized(leak):
+    """Evaluate a realization plan against the selected opponent."""
     return f"${rows[(leak, 10_000_000, 'routed')]['real_mean']:.3f}$"
 
 
@@ -207,6 +212,7 @@ Opponent & $N$ & $\Cpub$ & passive & $\Cid$ per-combo & $\Cid$ bucketed & Real. 
 
 
 def res_row(label, d):
+    """Compute res row for the render full river report workflow."""
     if d.get("bracketed_by_monotonicity"):
         return (
             label
@@ -259,6 +265,7 @@ Evidence design & rows & $R_M$ & $\Delta^-_M$ \\
 
 
 def fmt_gap(g):
+    """Compute fmt gap for the render full river report workflow."""
     if g is None:
         return "---"
     m, e = f"{g:.0e}".split("e")
@@ -304,6 +311,7 @@ Instance & rows & monolithic LP & decomposition & gap \\
 
 
 def dget(pair, n, arm):
+    """Read a nested result field while preserving a default value."""
     return next(
         r
         for r in drift["rows"]
@@ -362,6 +370,7 @@ $N$ & evidence & cert. & Real. & overclaim & viol \\
 
 
 def zrow(label, rs):
+    """Normalize one population record for the generated report."""
     ex = [r["exploit_safe"] for r in rs]
     ps = [r["pub_share"] for r in rs if r.get("pub_share") is not None]
     gs = [r["grp_share"] for r in rs if r.get("grp_share") is not None]

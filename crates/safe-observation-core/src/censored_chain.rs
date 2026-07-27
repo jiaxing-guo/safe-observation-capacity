@@ -1,6 +1,9 @@
+//! Censored chain algorithms for safe observation. See supplementary Reproducibility for its role in the release workflow.
+
 use crate::game::{Game, Node};
 
 #[derive(Clone)]
+/// Stores state for chain state.
 pub struct ChainState {
     s0: Option<usize>,
 
@@ -18,6 +21,7 @@ pub struct ChainState {
 }
 
 #[derive(Clone)]
+/// Stores state for chain game.
 pub struct ChainGame {
     num_types: usize,
     depth: usize,
@@ -25,7 +29,9 @@ pub struct ChainGame {
     bet: u32,
 }
 
+/// Implements operations for `ChainGame`.
 impl ChainGame {
+    /// Constructs a new value from the supplied configuration.
     pub fn new(depth: usize, num_types: usize) -> Self {
         ChainGame {
             num_types,
@@ -35,10 +41,12 @@ impl ChainGame {
         }
     }
 
+    /// Computes type char.
     fn type_char(&self, t: usize) -> char {
         std::char::from_digit(t as u32, 36).unwrap_or('?')
     }
 
+    /// Computes information set.
     fn infoset(&self, s: &ChainState, player: usize) -> String {
         let own = if player == 0 {
             s.s0.expect("dealt")
@@ -48,6 +56,7 @@ impl ChainGame {
         format!("{}|{}", self.type_char(own), s.hist)
     }
 
+    /// Compute the showdown value.
     fn showdown_value(&self, s: &ChainState) -> f64 {
         match s.s0.expect("dealt").cmp(&s.s1.expect("dealt")) {
             std::cmp::Ordering::Greater => s.committed[1] as f64,
@@ -57,9 +66,12 @@ impl ChainGame {
     }
 }
 
+/// Implements operations for `ChainGame`.
 impl Game for ChainGame {
+    /// Aliases the type used for state.
     type State = ChainState;
 
+    /// Return the initial game state.
     fn root(&self) -> ChainState {
         ChainState {
             s0: None,
@@ -72,6 +84,7 @@ impl Game for ChainGame {
         }
     }
 
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &ChainState) -> Node<ChainState> {
         if s.s0.is_none() {
             let n = self.num_types;
@@ -142,6 +155,7 @@ impl Game for ChainGame {
     }
 }
 
+/// Computes chain game.
 pub fn chain_game(suffix: &str) -> Option<ChainGame> {
     let body = suffix.strip_prefix('_')?;
     let mut depth: Option<usize> = None;
@@ -164,12 +178,14 @@ pub fn chain_game(suffix: &str) -> Option<ChainGame> {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::lp::{best_response_p1, safety_verify, solve_blueprint};
     use crate::payoff::{build, PayoffMatrix};
     use crate::sequence_form::compile;
 
+    /// Computes Nash saddle holds.
     fn nash_saddle_holds(game: &ChainGame) {
         let sf0 = compile(game, 0);
         let sf1 = compile(game, 1);
@@ -206,21 +222,25 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that depth1 is an exact Nash.
     fn depth1_is_an_exact_nash() {
         nash_saddle_holds(&ChainGame::new(1, 4));
     }
 
     #[test]
+    /// Verifies that depth2 is an exact Nash.
     fn depth2_is_an_exact_nash() {
         nash_saddle_holds(&ChainGame::new(2, 4));
     }
 
     #[test]
+    /// Verifies that depth3 is an exact Nash.
     fn depth3_is_an_exact_nash() {
         nash_saddle_holds(&ChainGame::new(3, 3));
     }
 
     #[test]
+    /// Verifies that parses game strings.
     fn parses_game_strings() {
         assert!(chain_game("_d3_k4").is_some());
         assert!(chain_game("_d1_k2").is_some());
@@ -232,6 +252,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that has censored fold and round structure.
     fn has_censored_fold_and_round_structure() {
         let game = ChainGame::new(2, 3);
         let sf1 = compile(&game, 1);

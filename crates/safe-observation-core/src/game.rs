@@ -1,3 +1,6 @@
+//! Game algorithms for safe observation. See Preliminaries and Problem Setup.
+
+/// Expand a state into its chance, decision, or terminal game node.
 pub enum Node<S> {
     Terminal(f64),
 
@@ -10,13 +13,18 @@ pub enum Node<S> {
     },
 }
 
+/// Defines the interface for game.
 pub trait Game {
+    /// Aliases the type used for state.
     type State: Clone;
 
+    /// Return the initial game state.
     fn root(&self) -> Self::State;
 
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, state: &Self::State) -> Node<Self::State>;
 
+    /// Sample chance.
     fn sample_chance(
         &self,
         state: &Self::State,

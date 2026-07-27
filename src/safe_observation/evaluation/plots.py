@@ -1,4 +1,4 @@
-""
+"""Plots primitives for safe-observation experiments. See supplementary Reproducibility for its role in the release workflow."""
 
 from pathlib import Path
 from typing import Any
@@ -16,15 +16,18 @@ except ModuleNotFoundError as exc:
 
 
 def _rounds(results: dict[str, Any]) -> list[int]:
+    """Compute rounds for the plots workflow."""
     return [row["round"] for row in results["aggregated_rounds"]]
 
 
 def _series(results: dict[str, Any], key: str) -> tuple[list[float], list[float]]:
+    """Compute series for the plots workflow."""
     rows = results["aggregated_rounds"]
     return [r[f"{key}_mean"] for r in rows], [r[f"{key}_std"] for r in rows]
 
 
 def _band(ax, xs, mean_ys, std_ys, label, color=None):
+    """Compute or draw a mean-and-uncertainty band."""
     (line,) = ax.plot(xs, mean_ys, label=label, color=color)
     lo = [m - s for m, s in zip(mean_ys, std_ys, strict=True)]
     hi = [m + s for m, s in zip(mean_ys, std_ys, strict=True)]
@@ -33,7 +36,7 @@ def _band(ax, xs, mean_ys, std_ys, label, color=None):
 
 
 def plot_value_over_rounds(results: dict[str, Any], ax=None):
-    ""
+    """Plot value over rounds for the plots workflow."""
     ax = ax or plt.subplots(figsize=(6, 4))[1]
     xs = _rounds(results)
     _band(ax, xs, *_series(results, "actual_value"), "actual value $x_t^\\top A y^*$")
@@ -54,7 +57,7 @@ def plot_value_over_rounds(results: dict[str, Any], ax=None):
 
 
 def plot_safety_over_rounds(results: dict[str, Any], ax=None):
-    ""
+    """Plot safety over rounds for the plots workflow."""
     ax = ax or plt.subplots(figsize=(6, 4))[1]
     xs = _rounds(results)
     _band(
@@ -72,7 +75,7 @@ def plot_safety_over_rounds(results: dict[str, Any], ax=None):
 
 
 def plot_ci_shrinkage(results: dict[str, Any], ax=None):
-    ""
+    """Plot confidence interval shrinkage for the plots workflow."""
     ax = ax or plt.subplots(figsize=(6, 4))[1]
     xs = _rounds(results)
     rows = results["aggregated_rounds"]
@@ -86,7 +89,7 @@ def plot_ci_shrinkage(results: dict[str, Any], ax=None):
 
 
 def plot_robust_vs_empirical_br(results: dict[str, Any], ax=None):
-    ""
+    """Plot robust vs empirical br."""
     ax = ax or plt.subplots(figsize=(6, 4))[1]
     xs = _rounds(results)
     _band(ax, xs, *_series(results, "robust_value"), "robust value (safe)")
@@ -111,7 +114,7 @@ def plot_robust_vs_empirical_br(results: dict[str, Any], ax=None):
 
 
 def plot_ablation(ablation: dict[str, list[dict[str, Any]]], ax=None):
-    ""
+    """Plot ablation for the plots workflow."""
     axes = ax
     if axes is None:
         _fig, axes = plt.subplots(1, 3, figsize=(13, 4))
@@ -130,7 +133,7 @@ def plot_ablation(ablation: dict[str, list[dict[str, Any]]], ax=None):
 def render_online_figures(
     results: dict[str, Any], out_dir: str | Path = "results"
 ) -> dict[str, Path]:
-    ""
+    """Render online figures for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     opp = results["opponent"]
@@ -157,7 +160,7 @@ def render_ablation_figure(
     opponent: str,
     out_dir: str | Path = "results",
 ) -> Path:
-    ""
+    """Render ablation figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 3, figsize=(13, 4))
@@ -170,12 +173,13 @@ def render_ablation_figure(
 
 
 def _arm_series(arm: dict[str, Any], key: str) -> tuple[list[float], list[float]]:
+    """Compute arm series for the plots workflow."""
     rows = arm[key]
     return [r["mean"] for r in rows], [r["std"] for r in rows]
 
 
 def plot_passive_vs_probing(comparison: dict[str, Any], axes=None):
-    ""
+    """Plot passive vs probing for the plots workflow."""
     if axes is None:
         _fig, axes = plt.subplots(1, 3, figsize=(15, 4))
     arms = comparison["arms"]
@@ -211,7 +215,7 @@ def plot_passive_vs_probing(comparison: dict[str, Any], axes=None):
 def render_probing_figure(
     comparison: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render probing figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
@@ -224,7 +228,7 @@ def render_probing_figure(
 
 
 def plot_budget_frontier(frontier: dict[str, Any], axes=None):
-    ""
+    """Plot budget frontier for the plots workflow."""
     if axes is None:
         _fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     cells = frontier["cells"]
@@ -259,7 +263,7 @@ def plot_budget_frontier(frontier: dict[str, Any], axes=None):
 def render_budget_frontier_figure(
     frontier: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render budget frontier figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
@@ -272,7 +276,7 @@ def render_budget_frontier_figure(
 
 
 def plot_importance_comparison(comparison: dict[str, Any], axes=None):
-    ""
+    """Plot importance comparison for the plots workflow."""
     if axes is None:
         _fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     cells = comparison["cells"]
@@ -308,7 +312,7 @@ def plot_importance_comparison(comparison: dict[str, Any], axes=None):
 def render_importance_figure(
     comparison: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render importance figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
@@ -321,7 +325,7 @@ def render_importance_figure(
 
 
 def plot_coverage(coverage: dict[str, Any], ax=None):
-    ""
+    """Plot coverage for the plots workflow."""
     ax = ax or plt.subplots(figsize=(6, 4))[1]
     cells = coverage["cells"]
     deltas = [c["delta"] for c in cells]
@@ -347,7 +351,7 @@ def plot_coverage(coverage: dict[str, Any], ax=None):
 def render_coverage_figure(
     coverage: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render coverage figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -360,7 +364,7 @@ def render_coverage_figure(
 
 
 def plot_finite_sample_gap(gap: dict[str, Any], axes=None):
-    ""
+    """Plot finite sample gap for the plots workflow."""
     if axes is None:
         _fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     series = gap["series"]
@@ -396,7 +400,7 @@ def plot_finite_sample_gap(gap: dict[str, Any], axes=None):
 def render_finite_sample_gap_figure(
     gap: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render finite sample gap figure."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
@@ -417,7 +421,7 @@ _GUARANTEE_COLOR = {
 
 
 def _render_table(ax, col_labels, rows, row_colors):
-    ""
+    """Render table for the plots workflow."""
     ax.axis("off")
     cell_colors = [[c] * len(col_labels) for c in row_colors]
     table = ax.table(
@@ -437,7 +441,7 @@ def _render_table(ax, col_labels, rows, row_colors):
 
 
 def plot_baseline_comparison(comparison: dict[str, Any], ax=None):
-    ""
+    """Plot baseline comparison for the plots workflow."""
     ax = ax or plt.subplots(figsize=(9, 3.5))[1]
     rows_data = comparison["opponents"]
     method_names = comparison["method_names"]
@@ -484,7 +488,7 @@ def plot_baseline_comparison(comparison: dict[str, Any], ax=None):
 def render_baseline_comparison_figure(
     comparison: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render baseline comparison figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(9, 3.5))
@@ -497,7 +501,7 @@ def render_baseline_comparison_figure(
 
 
 def plot_showdown_comparison(comparison: dict[str, Any], ax=None):
-    ""
+    """Plot showdown comparison for the plots workflow."""
     ax = ax or plt.subplots(figsize=(11, 3.5))[1]
     rows_data = comparison["opponents"]
     methods = comparison["method_names"]
@@ -525,7 +529,7 @@ def plot_showdown_comparison(comparison: dict[str, Any], ax=None):
 
 
 def plot_showdown_safety(comparison: dict[str, Any], ax=None):
-    ""
+    """Plot showdown safety for the plots workflow."""
     ax = ax or plt.subplots(figsize=(11, 3.5))[1]
     rows_data = comparison["opponents"]
     methods = comparison["method_names"]
@@ -559,7 +563,7 @@ def plot_showdown_safety(comparison: dict[str, Any], ax=None):
 def render_showdown_comparison_figure(
     comparison: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render showdown comparison figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, (ax_gain, ax_safety) = plt.subplots(2, 1, figsize=(11, 7))
@@ -573,7 +577,7 @@ def render_showdown_comparison_figure(
 
 
 def _showdown_sweep_series(comparison: dict[str, Any], field: str) -> tuple[list, dict]:
-    ""
+    """Compute showdown sweep series for the plots workflow."""
     sweep = comparison["sweep"]
     key_to_val = sweep["key_to_value"]
     rows = comparison["opponents"]
@@ -588,7 +592,7 @@ def _showdown_sweep_series(comparison: dict[str, Any], field: str) -> tuple[list
 
 
 def plot_showdown_sweep(comparison: dict[str, Any], ax_gain=None, ax_safety=None):
-    ""
+    """Plot showdown sweep for the plots workflow."""
     if ax_gain is None or ax_safety is None:
         _, (ax_gain, ax_safety) = plt.subplots(1, 2, figsize=(11, 4))
     xs, gain = _showdown_sweep_series(comparison, "exploitation_gain_mean")
@@ -663,7 +667,7 @@ def plot_showdown_sweep(comparison: dict[str, Any], ax_gain=None, ax_safety=None
 def render_showdown_sweep_figure(
     comparison: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render showdown sweep figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, (ax_gain, ax_safety) = plt.subplots(1, 2, figsize=(11, 4))
@@ -676,7 +680,7 @@ def render_showdown_sweep_figure(
 
 
 def plot_adversarial_stress(stress: dict[str, Any], ax=None):
-    ""
+    """Plot adversarial stress for the plots workflow."""
     ax = ax or plt.subplots(figsize=(9, 3))[1]
     methods = stress["methods"]
     floor = stress["safety_floor"]
@@ -721,7 +725,7 @@ def plot_adversarial_stress(stress: dict[str, Any], ax=None):
 def render_adversarial_stress_figure(
     stress: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render adversarial stress figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(9, 3))
@@ -734,7 +738,7 @@ def render_adversarial_stress_figure(
 
 
 def plot_nonstationary_stress(stress: dict[str, Any], ax=None):
-    ""
+    """Plot nonstationary stress for the plots workflow."""
     ax = ax or plt.subplots(figsize=(10, 3))[1]
     methods = stress["methods"]
     floor = stress["safety_floor"]
@@ -778,7 +782,7 @@ def plot_nonstationary_stress(stress: dict[str, Any], ax=None):
 def render_nonstationary_stress_figure(
     stress: dict[str, Any], out_dir: str | Path = "results"
 ) -> Path:
-    ""
+    """Render nonstationary stress figure for the plots workflow."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(10, 3))

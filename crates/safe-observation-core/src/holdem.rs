@@ -1,6 +1,9 @@
+//! Holdem algorithms for safe observation. See Experiments and supplementary Certification at the Unbucketed River.
+
 use crate::game::{Game, Node};
 
 #[derive(Clone, Copy)]
+/// Stores state for holdem rules.
 pub struct HoldemRules {
     num_strengths: usize,
 
@@ -11,7 +14,9 @@ pub struct HoldemRules {
     raise_cap: u8,
 }
 
+/// Implements operations for `HoldemRules`.
 impl HoldemRules {
+    /// Computes river toy.
     pub const fn river_toy() -> Self {
         Self {
             num_strengths: 3,
@@ -21,6 +26,7 @@ impl HoldemRules {
         }
     }
 
+    /// Computes river small.
     pub const fn river_small() -> Self {
         Self {
             num_strengths: 4,
@@ -30,6 +36,7 @@ impl HoldemRules {
         }
     }
 
+    /// Computes strength char.
     fn strength_char(&self, s: usize) -> char {
         debug_assert!(s < 10);
         char::from(b'0' + s as u8)
@@ -37,6 +44,7 @@ impl HoldemRules {
 }
 
 #[derive(Clone)]
+/// Stores state for holdem state.
 pub struct HoldemState {
     pub(crate) s0: Option<usize>,
     pub(crate) s1: Option<usize>,
@@ -56,11 +64,15 @@ pub struct HoldemState {
     pub(crate) river: Option<u8>,
 }
 
+/// Stores state for holdem toy.
 pub struct HoldemToy;
 
+/// Stores state for holdem small.
 pub struct HoldemSmall;
 
+/// Implements operations for `HoldemRules`.
 impl HoldemRules {
+    /// Computes information set key.
     fn infoset_key(&self, s: &HoldemState, player: usize) -> String {
         let own = if player == 0 {
             s.s0.unwrap()
@@ -70,11 +82,13 @@ impl HoldemRules {
         format!("{}|{}", self.strength_char(own), s.hist)
     }
 
+    /// Computes push action.
     fn push_action(&self, n: &mut HoldemState, ch: char) {
         n.hist.push(ch);
         n.acted += 1;
     }
 
+    /// Apply check.
     fn apply_check(&self, s: &HoldemState) -> HoldemState {
         let mut n = s.clone();
         let was_acted = n.acted;
@@ -87,6 +101,7 @@ impl HoldemRules {
         n
     }
 
+    /// Apply call.
     fn apply_call(&self, s: &HoldemState) -> HoldemState {
         let mut n = s.clone();
         let i = n.to_act;
@@ -96,6 +111,7 @@ impl HoldemRules {
         n
     }
 
+    /// Apply raise.
     fn apply_raise(&self, s: &HoldemState, target: u32, ch: char) -> HoldemState {
         let mut n = s.clone();
         let i = n.to_act;
@@ -106,6 +122,7 @@ impl HoldemRules {
         n
     }
 
+    /// Apply fold.
     fn apply_fold(&self, s: &HoldemState) -> HoldemState {
         let mut n = s.clone();
         let i = n.to_act;
@@ -114,6 +131,7 @@ impl HoldemRules {
         n
     }
 
+    /// Computes legal actions.
     pub(crate) fn legal_actions(&self, s: &HoldemState) -> Vec<(char, HoldemState)> {
         let i = s.to_act;
         let to_call = s.committed[1 - i] - s.committed[i];
@@ -143,6 +161,7 @@ impl HoldemRules {
         out
     }
 
+    /// Compute the showdown value.
     fn showdown_value(&self, s: &HoldemState) -> f64 {
         match s.s0.unwrap().cmp(&s.s1.unwrap()) {
             std::cmp::Ordering::Greater => s.committed[1] as f64,
@@ -151,6 +170,7 @@ impl HoldemRules {
         }
     }
 
+    /// Return the initial game state.
     pub(crate) fn root(&self) -> HoldemState {
         HoldemState {
             s0: None,
@@ -167,6 +187,7 @@ impl HoldemRules {
         }
     }
 
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &HoldemState) -> Node<HoldemState> {
         if s.s0.is_none() {
             let n = self.num_strengths;
@@ -207,26 +228,35 @@ impl HoldemRules {
     }
 }
 
+/// Implements operations for `HoldemToy`.
 impl Game for HoldemToy {
+    /// Aliases the type used for state.
     type State = HoldemState;
+    /// Return the initial game state.
     fn root(&self) -> HoldemState {
         HoldemRules::river_toy().root()
     }
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &HoldemState) -> Node<HoldemState> {
         HoldemRules::river_toy().node(s)
     }
 }
 
+/// Implements operations for `HoldemSmall`.
 impl Game for HoldemSmall {
+    /// Aliases the type used for state.
     type State = HoldemState;
+    /// Return the initial game state.
     fn root(&self) -> HoldemState {
         HoldemRules::river_small().root()
     }
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &HoldemState) -> Node<HoldemState> {
         HoldemRules::river_small().node(s)
     }
 }
 
+/// Computes sizes.
 pub fn sizes<G: Game<State = HoldemState>>(game: &G, player: usize) -> (usize, usize) {
     let sf = crate::sequence_form::compile(game, player);
     (sf.num_sequences(), sf.num_infosets())
@@ -234,6 +264,7 @@ pub fn sizes<G: Game<State = HoldemState>>(game: &G, player: usize) -> (usize, u
 
 use crate::hand_eval::{card_str, evaluate7};
 
+/// Stores state for river endgame.
 pub struct RiverEndgame {
     rules: HoldemRules,
     range0: Vec<[u8; 2]>,
@@ -244,6 +275,7 @@ pub struct RiverEndgame {
     deals: Vec<(usize, usize)>,
 }
 
+/// Computes full river range.
 pub fn full_river_range(board: &[u8; 5]) -> Vec<[u8; 2]> {
     let avail: Vec<u8> = (0..52u8).filter(|c| !board.contains(c)).collect();
     let mut out = Vec::with_capacity(avail.len() * (avail.len() - 1) / 2);
@@ -255,7 +287,9 @@ pub fn full_river_range(board: &[u8; 5]) -> Vec<[u8; 2]> {
     out
 }
 
+/// Implements operations for `RiverEndgame`.
 impl RiverEndgame {
+    /// Constructs a new value from the supplied configuration.
     pub fn new(
         rules: HoldemRules,
         board: [u8; 5],
@@ -288,19 +322,23 @@ impl RiverEndgame {
         }
     }
 
+    /// Computes full.
     pub fn full(rules: HoldemRules, board: [u8; 5]) -> Self {
         let range = full_river_range(&board);
         Self::new(rules, board, range.clone(), range)
     }
 
+    /// Computes num deals.
     pub fn num_deals(&self) -> usize {
         self.deals.len()
     }
 
+    /// Computes rules.
     pub(crate) fn rules(&self) -> HoldemRules {
         self.rules
     }
 
+    /// Computes range.
     pub(crate) fn range(&self, player: usize) -> &[[u8; 2]] {
         if player == 0 {
             &self.range0
@@ -309,6 +347,7 @@ impl RiverEndgame {
         }
     }
 
+    /// Computes scores.
     pub(crate) fn scores(&self, player: usize) -> &[u32] {
         if player == 0 {
             &self.score0
@@ -317,6 +356,7 @@ impl RiverEndgame {
         }
     }
 
+    /// Computes information set key.
     fn infoset_key(&self, s: &HoldemState, player: usize) -> String {
         let hole = if player == 0 {
             self.range0[s.s0.unwrap()]
@@ -326,6 +366,7 @@ impl RiverEndgame {
         format!("{}{}|{}", card_str(hole[0]), card_str(hole[1]), s.hist)
     }
 
+    /// Compute the showdown value.
     fn showdown_value(&self, s: &HoldemState) -> f64 {
         match self.score0[s.s0.unwrap()].cmp(&self.score1[s.s1.unwrap()]) {
             std::cmp::Ordering::Greater => s.committed[1] as f64,
@@ -335,13 +376,17 @@ impl RiverEndgame {
     }
 }
 
+/// Implements operations for `RiverEndgame`.
 impl Game for RiverEndgame {
+    /// Aliases the type used for state.
     type State = HoldemState;
 
+    /// Return the initial game state.
     fn root(&self) -> HoldemState {
         self.rules.root()
     }
 
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &HoldemState) -> Node<HoldemState> {
         if s.s0.is_none() {
             let prob = 1.0 / self.deals.len() as f64;
@@ -381,6 +426,7 @@ impl Game for RiverEndgame {
         }
     }
 
+    /// Sample chance.
     fn sample_chance(&self, s: &HoldemState, rng: &mut dyn FnMut() -> f64) -> Option<HoldemState> {
         if s.s0.is_some() {
             return None;
@@ -395,6 +441,7 @@ impl Game for RiverEndgame {
     }
 }
 
+/// Computes canonical holdem.
 pub fn canonical_holdem() -> RiverEndgame {
     let board = [
         crate::hand_eval::card(12, 3),
@@ -406,6 +453,7 @@ pub fn canonical_holdem() -> RiverEndgame {
     river_endgame_on(board)
 }
 
+/// Computes ten highest range.
 fn ten_highest_range(board: &[u8; 5]) -> Vec<[u8; 2]> {
     let mut cards = Vec::with_capacity(10);
     'outer: for r in (0..13u8).rev() {
@@ -428,11 +476,13 @@ fn ten_highest_range(board: &[u8; 5]) -> Vec<[u8; 2]> {
     range
 }
 
+/// Computes river endgame on.
 fn river_endgame_on(board: [u8; 5]) -> RiverEndgame {
     let range = ten_highest_range(&board);
     RiverEndgame::new(HoldemRules::river_small(), board, range.clone(), range)
 }
 
+/// Computes holdem variant.
 pub fn holdem_variant(name: &str) -> Option<RiverEndgame> {
     let c = crate::hand_eval::card;
     let board = match name {
@@ -446,10 +496,12 @@ pub fn holdem_variant(name: &str) -> Option<RiverEndgame> {
     Some(river_endgame_on(board))
 }
 
+/// Compile holdem.
 pub fn compile_holdem(player: usize) -> crate::sequence_form::SequenceForm {
     crate::sequence_form::compile(&canonical_holdem(), player)
 }
 
+/// Build holdem.
 pub fn build_holdem() -> crate::payoff::PayoffMatrix {
     let game = canonical_holdem();
     crate::payoff::build(&game, &compile_holdem(0), &compile_holdem(1))
@@ -458,12 +510,14 @@ pub fn build_holdem() -> crate::payoff::PayoffMatrix {
 use crate::hand_eval::rank_of;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Enumerates the supported river deal variants.
 pub enum RiverDeal {
     Exact,
 
     Bucketed(usize),
 }
 
+/// Stores state for turn river endgame.
 pub struct TurnRiverEndgame {
     rules: HoldemRules,
     turn_board: [u8; 4],
@@ -478,7 +532,9 @@ pub struct TurnRiverEndgame {
     deals: Vec<(usize, usize)>,
 }
 
+/// Implements operations for `TurnRiverEndgame`.
 impl TurnRiverEndgame {
+    /// Constructs a new value from the supplied configuration.
     pub fn new(
         rules: HoldemRules,
         turn_board: [u8; 4],
@@ -511,6 +567,7 @@ impl TurnRiverEndgame {
         }
     }
 
+    /// Computes hole.
     fn hole(&self, s: &HoldemState, player: usize) -> [u8; 2] {
         if player == 0 {
             self.range0[s.s0.unwrap()]
@@ -519,16 +576,19 @@ impl TurnRiverEndgame {
         }
     }
 
+    /// Computes information set key.
     fn infoset_key(&self, s: &HoldemState, player: usize) -> String {
         let h = self.hole(s, player);
         format!("{}{}|{}", card_str(h[0]), card_str(h[1]), s.hist)
     }
 
+    /// Computes seven.
     fn seven(&self, hole: [u8; 2], river: u8) -> [u8; 7] {
         let b = self.turn_board;
         [hole[0], hole[1], b[0], b[1], b[2], b[3], river]
     }
 
+    /// Compute the showdown value.
     fn showdown_value(&self, s: &HoldemState) -> f64 {
         let river = s.river.unwrap();
         let r0 = evaluate7(&self.seven(self.hole(s, 0), river));
@@ -540,6 +600,7 @@ impl TurnRiverEndgame {
         }
     }
 
+    /// Computes river state.
     fn river_state(&self, s: &HoldemState, card: u8) -> HoldemState {
         let mut n = s.clone();
         n.river = Some(card);
@@ -553,11 +614,13 @@ impl TurnRiverEndgame {
         n
     }
 
+    /// Computes num deals.
     pub fn num_deals(&self) -> usize {
         self.deals.len()
     }
 }
 
+/// Computes bucket river.
 fn bucket_river(avail: &[u8], k: usize) -> Vec<(f64, u8)> {
     let n = avail.len();
     if n == 0 || k == 0 {
@@ -583,13 +646,17 @@ fn bucket_river(avail: &[u8], k: usize) -> Vec<(f64, u8)> {
     out
 }
 
+/// Implements operations for `TurnRiverEndgame`.
 impl Game for TurnRiverEndgame {
+    /// Aliases the type used for state.
     type State = HoldemState;
 
+    /// Return the initial game state.
     fn root(&self) -> HoldemState {
         self.rules.root()
     }
 
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &HoldemState) -> Node<HoldemState> {
         if s.s0.is_none() {
             let prob = 1.0 / self.deals.len() as f64;
@@ -654,6 +721,7 @@ impl Game for TurnRiverEndgame {
         }
     }
 
+    /// Sample chance.
     fn sample_chance(&self, s: &HoldemState, rng: &mut dyn FnMut() -> f64) -> Option<HoldemState> {
         if s.s0.is_some() {
             return None;
@@ -668,26 +736,32 @@ impl Game for TurnRiverEndgame {
     }
 }
 
+/// Enumerates the supported holdem game variants.
 pub enum HoldemGame {
     River(RiverEndgame),
 
     TurnRiver(TurnRiverEndgame),
 }
 
+/// Implements operations for `HoldemGame`.
 impl Game for HoldemGame {
+    /// Aliases the type used for state.
     type State = HoldemState;
+    /// Return the initial game state.
     fn root(&self) -> HoldemState {
         match self {
             HoldemGame::River(g) => g.root(),
             HoldemGame::TurnRiver(g) => g.root(),
         }
     }
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &HoldemState) -> Node<HoldemState> {
         match self {
             HoldemGame::River(g) => g.node(s),
             HoldemGame::TurnRiver(g) => g.node(s),
         }
     }
+    /// Sample chance.
     fn sample_chance(&self, s: &HoldemState, rng: &mut dyn FnMut() -> f64) -> Option<HoldemState> {
         match self {
             HoldemGame::River(g) => g.sample_chance(s, rng),
@@ -696,11 +770,13 @@ impl Game for HoldemGame {
     }
 }
 
+/// Computes canonical turn board.
 fn canonical_turn_board() -> [u8; 4] {
     let c = crate::hand_eval::card;
     [c(12, 3), c(11, 3), c(10, 1), c(9, 0)]
 }
 
+/// Computes ten highest range4.
 fn ten_highest_range4(turn_board: &[u8; 4]) -> Vec<[u8; 2]> {
     let mut cards = Vec::with_capacity(10);
     'outer: for r in (0..13u8).rev() {
@@ -723,6 +799,7 @@ fn ten_highest_range4(turn_board: &[u8; 4]) -> Vec<[u8; 2]> {
     range
 }
 
+/// Computes canonical turn river.
 pub fn canonical_turn_river(deal_mode: RiverDeal) -> TurnRiverEndgame {
     let tb = canonical_turn_board();
     let range = ten_highest_range4(&tb);
@@ -735,6 +812,7 @@ pub fn canonical_turn_river(deal_mode: RiverDeal) -> TurnRiverEndgame {
     )
 }
 
+/// Computes turn river game.
 pub fn turn_river_game(suffix: &str) -> Option<TurnRiverEndgame> {
     let mode = if suffix.is_empty() {
         RiverDeal::Exact
@@ -747,12 +825,14 @@ pub fn turn_river_game(suffix: &str) -> Option<TurnRiverEndgame> {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::lp::{best_response_p1, safety_verify, solve_blueprint};
     use crate::payoff::{build, PayoffMatrix};
     use crate::sequence_form::compile;
 
+    /// Computes Nash saddle holds.
     fn nash_saddle_holds<G: Game<State = HoldemState>>(game: &G) {
         let sf0 = compile(game, 0);
         let sf1 = compile(game, 1);
@@ -789,16 +869,19 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that toy is an exact Nash zero exploitability.
     fn toy_is_an_exact_nash_zero_exploitability() {
         nash_saddle_holds(&HoldemToy);
     }
 
     #[test]
+    /// Verifies that small is an exact Nash zero exploitability.
     fn small_is_an_exact_nash_zero_exploitability() {
         nash_saddle_holds(&HoldemSmall);
     }
 
     #[test]
+    /// Verifies that sizes are well formed and symmetric.
     fn sizes_are_well_formed_and_symmetric() {
         let toy = sizes(&HoldemToy, 0);
         assert_eq!(toy, sizes(&HoldemToy, 1));
@@ -808,6 +891,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that fcpa action menu is correct at the root decision.
     fn fcpa_action_menu_is_correct_at_the_root_decision() {
         let rules = HoldemRules::river_toy();
         let mut s = rules.root();
@@ -828,6 +912,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that pot bet then facing player can fold call or raise.
     fn pot_bet_then_facing_player_can_fold_call_or_raise() {
         let rules = HoldemRules::river_toy();
         let mut s = rules.root();
@@ -854,6 +939,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that fold forfeits committed chips.
     fn fold_forfeits_committed_chips() {
         let rules = HoldemRules::river_toy();
         let mut s = rules.root();
@@ -879,6 +965,7 @@ mod tests {
     use crate::hand_eval::card;
     use crate::holdem::{full_river_range, RiverEndgame};
 
+    /// Computes small river.
     fn small_river() -> RiverEndgame {
         let board = [
             card(12, 3),
@@ -903,11 +990,13 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that real card river is an exact Nash zero exploitability.
     fn real_card_river_is_an_exact_nash_zero_exploitability() {
         nash_saddle_holds(&small_river());
     }
 
     #[test]
+    /// Verifies that showdown uses the real hand evaluator.
     fn showdown_uses_the_real_hand_evaluator() {
         let game = small_river();
 
@@ -934,6 +1023,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that full river range has 1081 combos.
     fn full_river_range_has_1081_combos() {
         let board = [
             card(12, 3),
@@ -950,6 +1040,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that sample chance is bit identical to node deal.
     fn sample_chance_is_bit_identical_to_node_deal() {
         let game = small_river();
         let root = game.root();
@@ -975,6 +1066,7 @@ mod tests {
         assert!(game.sample_chance(&dealt, &mut draw).is_none());
     }
 
+    /// Computes small turn river.
     fn small_turn_river(mode: RiverDeal) -> TurnRiverEndgame {
         let tb = [card(12, 3), card(11, 3), card(10, 1), card(9, 0)];
         let range0 = vec![[card(8, 3), card(2, 3)], [card(7, 0), card(7, 1)]];
@@ -983,16 +1075,19 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that turn river bucketed is an exact Nash zero exploitability.
     fn turn_river_bucketed_is_an_exact_nash_zero_exploitability() {
         nash_saddle_holds(&small_turn_river(RiverDeal::Bucketed(2)));
     }
 
     #[test]
+    /// Verifies that turn river exact is an exact Nash zero exploitability.
     fn turn_river_exact_is_an_exact_nash_zero_exploitability() {
         nash_saddle_holds(&small_turn_river(RiverDeal::Exact));
     }
 
     #[test]
+    /// Verifies that turn check check deals a public river then resumes betting.
     fn turn_check_check_deals_a_public_river_then_resumes_betting() {
         let game = small_turn_river(RiverDeal::Bucketed(2));
         let mut s = match game.node(&game.root()) {
@@ -1022,6 +1117,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that turn fold ends the hand with no river dealt.
     fn turn_fold_ends_the_hand_with_no_river_dealt() {
         let game = small_turn_river(RiverDeal::Bucketed(2));
         let mut s = match game.node(&game.root()) {
@@ -1043,6 +1139,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that river bucketing shrinks the tree versus exact.
     fn river_bucketing_shrinks_the_tree_versus_exact() {
         let exact = sizes(&small_turn_river(RiverDeal::Exact), 0);
         let bucketed = sizes(&small_turn_river(RiverDeal::Bucketed(2)), 0);
@@ -1053,6 +1150,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that two street is larger than one street.
     fn two_street_is_larger_than_one_street() {
         let one = sizes(&HoldemSmall, 0);
         let two = sizes(&small_turn_river(RiverDeal::Bucketed(2)), 0);

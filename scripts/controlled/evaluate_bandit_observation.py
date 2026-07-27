@@ -1,4 +1,4 @@
-""
+"""Evaluate the bandit observation experiment. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ DELTA = 0.1
 
 
 def _capacity(mu, idx_I, rho):
-    ""
+    """Compute capacity for the evaluate bandit observation workflow."""
     n = len(mu)
     c = np.zeros(n)
     c[idx_I] = -1.0
@@ -48,7 +48,7 @@ def _capacity(mu, idx_I, rho):
 
 
 def main() -> None:
-
+    """Run the command-line entry point."""
     mu = [MU0, MU0 + GOOD] + [MU0 - Li for Li in L]
     names = ["baseline", "good"] + [f"risky_L={Li}" for Li in L]
     print("# Probe: conservative-bandit safe-observation capacity coupling")

@@ -1,4 +1,4 @@
-""
+"""Check router mechanism. See supplementary Reproducibility for its role in the release workflow."""
 
 import multiprocessing as mp
 import statistics as st
@@ -22,6 +22,7 @@ TOPK = 15
 
 
 def _kappa_at(label: str, rho: float) -> float:
+    """Compute kappa at for the check router mechanism workflow."""
     pr = D._try_solve(
         lambda: D.robust_safe_response_probe(
             D._W["triv_iv"],
@@ -41,11 +42,13 @@ def _kappa_at(label: str, rho: float) -> float:
 
 
 def _task(args):
+    """Execute one independently reproducible parallel task."""
     fam, label = args
     return fam, label, {r: _kappa_at(label, r) for r in RHOS}
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     D._init()
     suite = D._W["suite"]
 

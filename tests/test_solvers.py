@@ -1,4 +1,4 @@
-""
+"""Regression tests for test solvers. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -9,6 +9,7 @@ KNOWN_KUHN_VALUE = -1.0 / 18.0
 
 
 def test_blueprint_lp_matches_known_value():
+    """Verify that blueprint linear program matches known value."""
     sol = solve_blueprint("kuhn", method="lp")
     assert sol.method == "lp"
     assert sol.value == pytest.approx(KNOWN_KUHN_VALUE, abs=1e-9)
@@ -22,13 +23,14 @@ def test_blueprint_lp_matches_known_value():
 
 
 def test_blueprint_realization_is_feasible():
+    """Verify that blueprint realization is feasible."""
     sol = solve_blueprint("kuhn", method="lp")
     sf0 = compile_kuhn(0)
     assert sf0.constraint_residual(sol.realization) < 1e-9
 
 
 def test_blueprint_is_exactly_safe():
-
+    """Verify that blueprint is exactly safe."""
     sol = solve_blueprint("kuhn", method="lp")
     safety = safety_verifier(sol.realization, game="kuhn")
     assert safety.value == pytest.approx(sol.value, abs=1e-9)
@@ -36,6 +38,7 @@ def test_blueprint_is_exactly_safe():
 
 
 def test_always_pass_is_exploited_to_minus_one():
+    """Verify that always pass is exploited to minus one."""
     sf0 = compile_kuhn(0)
     x = sf0.realization_from_behavior(
         {info.label: [1.0, 0.0] for info in sf0.info_sets}
@@ -48,6 +51,7 @@ def test_always_pass_is_exploited_to_minus_one():
 
 
 def test_cfr_method_still_available():
+    """Verify that CFR method still available."""
     sol = solve_blueprint("kuhn", method="cfr", iterations=20_000)
     assert sol.method == "cfr"
     assert sol.realization is None
@@ -55,7 +59,7 @@ def test_cfr_method_still_available():
 
 
 def test_mccfr_blueprint_backend_converges_on_kuhn():
-
+    """Verify that mccfr blueprint backend converges on Kuhn."""
     sol = solve_blueprint("kuhn", method="mccfr", iterations=20_000, seed=2026)
     assert sol.method == "mccfr"
     assert sol.realization is not None
@@ -67,6 +71,7 @@ def test_mccfr_blueprint_backend_converges_on_kuhn():
 
 
 def test_mccfr_backend_is_reproducible():
+    """Verify that mccfr backend is reproducible."""
     a = solve_blueprint("kuhn", method="mccfr", iterations=2_000, seed=7)
     b = solve_blueprint("kuhn", method="mccfr", iterations=2_000, seed=7)
     assert a.value == b.value
@@ -74,16 +79,19 @@ def test_mccfr_backend_is_reproducible():
 
 
 def test_unknown_method_raises():
+    """Verify that unknown method raises."""
     with pytest.raises(ValueError):
         solve_blueprint("kuhn", method="nope")
 
 
 def test_safety_verifier_validates_length():
+    """Verify that safety verifier validates length."""
     with pytest.raises(ValueError):
         safety_verifier([0.0] * 5, game="kuhn")
 
 
 def test_best_response_to_always_fold_is_plus_one():
+    """Verify that best response to always fold is plus one."""
     sf1 = compile_kuhn(1)
     y = sf1.realization_from_behavior(
         {info.label: [1.0, 0.0] for info in sf1.info_sets}
@@ -94,7 +102,7 @@ def test_best_response_to_always_fold_is_plus_one():
 
 
 def test_best_response_lower_bounds_game_value():
-
+    """Verify that best response lower bounds game value."""
     sf1 = compile_kuhn(1)
     for probs in ([0.5, 0.5], [0.2, 0.8], [0.9, 0.1]):
         y = sf1.realization_from_behavior({info.label: probs for info in sf1.info_sets})
@@ -102,5 +110,6 @@ def test_best_response_lower_bounds_game_value():
 
 
 def test_best_response_validates_length():
+    """Verify that best response validates length."""
     with pytest.raises(ValueError):
         best_response([0.0] * 5, game="kuhn")

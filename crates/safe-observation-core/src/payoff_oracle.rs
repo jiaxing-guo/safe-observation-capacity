@@ -1,22 +1,31 @@
+//! Payoff oracle algorithms for safe observation. See Preliminaries and Problem Setup.
+
 use crate::payoff::PayoffMatrix;
 use crate::river_range::{PubNode, RangeGame};
 use crate::sequence_form::SequenceForm;
 
+/// Defines the interface for payoff oracle.
 pub trait PayoffOracle {
+    /// Computes at x.
     fn at_x(&self, x: &[f64]) -> Vec<f64>;
 
+    /// Computes a y.
     fn a_y(&self, y: &[f64]) -> Vec<f64>;
 }
 
+/// Implements operations for `PayoffMatrix`.
 impl PayoffOracle for PayoffMatrix {
+    /// Computes at x.
     fn at_x(&self, x: &[f64]) -> Vec<f64> {
         self.matvec_at_x(x)
     }
+    /// Computes a y.
     fn a_y(&self, y: &[f64]) -> Vec<f64> {
         self.matvec_a_y(y)
     }
 }
 
+/// Stores state for range oracle.
 pub struct RangeOracle<'a> {
     rg: &'a RangeGame<'a>,
 
@@ -26,7 +35,9 @@ pub struct RangeOracle<'a> {
     nx: usize,
 }
 
+/// Implements operations for `RangeOracle<'a>`.
 impl<'a> RangeOracle<'a> {
+    /// Constructs a new value from the supplied configuration.
     pub fn new(rg: &'a RangeGame<'a>, sf0: &SequenceForm, sf1: &SequenceForm) -> Self {
         let n = [rg.combos(0), rg.combos(1)];
         let nodes = rg.tree.nodes.len();
@@ -68,13 +79,17 @@ impl<'a> RangeOracle<'a> {
     }
 }
 
+/// Implements operations for `RangeOracle<'_>`.
 impl RangeOracle<'_> {
+    /// Computes seq at.
     pub fn seq_at(&self, player: usize, node: usize, combo: usize) -> usize {
         self.seq[player][node * self.n[player] + combo] as usize
     }
 }
 
+/// Implements operations for `RangeOracle<'_>`.
 impl PayoffOracle for RangeOracle<'_> {
+    /// Computes at x.
     fn at_x(&self, x: &[f64]) -> Vec<f64> {
         let mut out = vec![0.0; self.ny];
         for (id, node) in self.rg.tree.nodes.iter().enumerate() {
@@ -94,6 +109,7 @@ impl PayoffOracle for RangeOracle<'_> {
         out
     }
 
+    /// Computes a y.
     fn a_y(&self, y: &[f64]) -> Vec<f64> {
         let mut out = vec![0.0; self.nx];
         for (id, node) in self.rg.tree.nodes.iter().enumerate() {
@@ -115,6 +131,7 @@ impl PayoffOracle for RangeOracle<'_> {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::holdem::{build_holdem, canonical_holdem, compile_holdem};
@@ -122,6 +139,7 @@ mod tests {
     use crate::river_range::RangeGame;
 
     #[test]
+    /// Verifies that range oracle matvecs match payoff matrix on compact river.
     fn range_oracle_matvecs_match_payoff_matrix_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);

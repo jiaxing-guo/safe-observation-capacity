@@ -1,4 +1,4 @@
-""
+"""Regression tests for test config. See the corresponding implementation module and supplementary Reproducibility."""
 
 from pathlib import Path
 
@@ -16,6 +16,7 @@ CONFIGS = Path(__file__).resolve().parents[1] / "configs"
 
 
 def test_opponent_from_spec_passes_params():
+    """Verify that opponent from spec passes params."""
     opp = opponent_from_spec({"type": "static_biased", "bet_prob": 0.2})
     assert opp.name == "static_biased"
 
@@ -23,23 +24,26 @@ def test_opponent_from_spec_passes_params():
 
 
 def test_opponent_from_spec_requires_type():
+    """Verify that opponent from spec requires type."""
     with pytest.raises(ValueError):
         opponent_from_spec({"bet_prob": 0.2})
 
 
 def test_opponent_from_spec_unknown_type():
+    """Verify that opponent from spec unknown type."""
     with pytest.raises(ValueError):
         opponent_from_spec({"type": "nope"})
 
 
 def test_shipped_configs_exist():
+    """Verify that shipped configs exist."""
     assert (CONFIGS / "kuhn" / "blueprint.toml").exists()
     assert (CONFIGS / "kuhn" / "static_opponent.toml").exists()
     assert (CONFIGS / "kuhn" / "safety_ablation.toml").exists()
 
 
 def test_kuhn_static_config_matches_run_parameters():
-
+    """Verify that Kuhn static config matches run parameters."""
     cfg = load_config(CONFIGS / "kuhn" / "static_opponent.toml")
     assert cfg["experiment"]["kind"] == "online_replicated"
     assert cfg["opponent"] == {"type": "static_biased", "bet_prob": 0.1}
@@ -49,6 +53,7 @@ def test_kuhn_static_config_matches_run_parameters():
 
 
 def test_run_blueprint_config(tmp_path):
+    """Verify that run blueprint config."""
     run = run_config(
         {
             "experiment": {"kind": "blueprint", "name": "bp"},
@@ -63,6 +68,7 @@ def test_run_blueprint_config(tmp_path):
 
 
 def test_run_online_replicated_config_no_figures(tmp_path):
+    """Verify that run online replicated config no figures."""
     run = run_config(
         {
             "experiment": {"kind": "online_replicated", "name": "online_test"},
@@ -79,6 +85,7 @@ def test_run_online_replicated_config_no_figures(tmp_path):
 
 
 def test_run_ablation_config(tmp_path):
+    """Verify that run ablation config."""
     run = run_config(
         {
             "experiment": {"kind": "ablation", "name": "abl"},
@@ -98,6 +105,7 @@ def test_run_ablation_config(tmp_path):
 
 
 def test_figures_override_renders(tmp_path):
+    """Verify that figures override renders."""
     pytest.importorskip("matplotlib")
     run = run_config(
         {
@@ -114,5 +122,6 @@ def test_figures_override_renders(tmp_path):
 
 
 def test_unknown_kind_raises():
+    """Verify that unknown kind raises."""
     with pytest.raises(ValueError):
         run_config({"experiment": {"kind": "bogus"}})

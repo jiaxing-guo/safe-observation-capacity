@@ -1,4 +1,4 @@
-""
+"""Public interfaces for experiments. See Safe Active De-censoring, Experiments, and supplementary Game Instances and Experimental Setup."""
 
 from .blueprint import run_kuhn_blueprint
 from .config import ConfigRun, load_config, run_config, summarize

@@ -1,4 +1,4 @@
-""
+"""Evaluate the blueprint capacity experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ BETA = 1e6
 
 
 def _kappa_curve(target_labels, v_ref, triv_iv, cont_beh):
-    ""
+    """Compute kappa curve for the evaluate blueprint capacity workflow."""
     curves: dict[str, list[float]] = {lbl: [] for lbl in target_labels}
     for rho in RHO_GRID:
         for lbl in target_labels:
@@ -48,7 +48,7 @@ def _kappa_curve(target_labels, v_ref, triv_iv, cont_beh):
 
 
 def _summarize(curves):
-    ""
+    """Summarize the supplied experiment records."""
     rows = []
     for lbl, k in curves.items():
         k0 = k[0]
@@ -64,6 +64,7 @@ def _summarize(curves):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf1 = compile_game(GAME, 1)
     fold_idx = _fold_action_indices(sf1)
     triv_iv = {i.label: [(0.0, 1.0)] * len(i.children) for i in sf1.info_sets}
@@ -86,6 +87,7 @@ def main() -> None:
     y_star = list(Opponent(name=LEAK, behavior=suite[LEAK], game=GAME).realization())
 
     def is_river(label: str) -> bool:
+        """Return whether river for the evaluate blueprint capacity workflow."""
         return "/" in (label.split("|", 1)[1] if "|" in label else "")
 
     carriers = []

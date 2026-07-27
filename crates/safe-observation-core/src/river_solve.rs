@@ -1,8 +1,11 @@
+//! River solve algorithms for safe observation. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River.
+
 use std::collections::HashMap;
 
 use crate::river_range::{PubNode, RangeGame};
 
 #[derive(Clone, Copy, Debug)]
+/// Enumerates the supported variant variants.
 pub enum Variant {
     CfrPlus,
 
@@ -11,7 +14,9 @@ pub enum Variant {
     PcfrPlus,
 }
 
+/// Implements operations for `Variant`.
 impl Variant {
+    /// Computes dcfr.
     pub fn dcfr() -> Self {
         Variant::Dcfr {
             alpha: 1.5,
@@ -21,12 +26,14 @@ impl Variant {
     }
 }
 
+/// Stores state for slot.
 struct Slot {
     player: usize,
     offset: usize,
     n_actions: usize,
 }
 
+/// Stores state for range CFR.
 pub struct RangeCfr<'a> {
     rg: &'a RangeGame<'a>,
     variant: Variant,
@@ -44,7 +51,9 @@ pub struct RangeCfr<'a> {
     t: u64,
 }
 
+/// Implements operations for `RangeCfr<'a>`.
 impl<'a> RangeCfr<'a> {
+    /// Constructs a new value from the supplied configuration.
     pub fn new(rg: &'a RangeGame<'a>, variant: Variant) -> Self {
         let n = [rg.game.range(0).len(), rg.game.range(1).len()];
         let mut sizes = [0usize; 2];
@@ -79,10 +88,12 @@ impl<'a> RangeCfr<'a> {
         }
     }
 
+    /// Computes iterations.
     pub fn iterations(&self) -> u64 {
         self.t
     }
 
+    /// Computes sigma into.
     fn sigma_into(&self, p: usize, slot: &Slot, k: usize, out: &mut [f64]) {
         let m = slot.n_actions;
         let base = slot.offset + k * m;
@@ -107,6 +118,7 @@ impl<'a> RangeCfr<'a> {
         }
     }
 
+    /// Computes iterate.
     pub fn iterate(&mut self) {
         self.t += 1;
         let w_avg = match self.variant {
@@ -135,6 +147,7 @@ impl<'a> RangeCfr<'a> {
         }
     }
 
+    /// Traverse the game tree while accumulating reach contributions.
     fn walk(
         &mut self,
         my: usize,
@@ -222,6 +235,7 @@ impl<'a> RangeCfr<'a> {
         }
     }
 
+    /// Computes average behavior.
     pub fn average_behavior(&self, player: usize) -> HashMap<String, Vec<f64>> {
         let mut out = HashMap::new();
         for (id, node) in self.rg.tree.nodes.iter().enumerate() {
@@ -252,6 +266,7 @@ impl<'a> RangeCfr<'a> {
     }
 }
 
+/// Compute the best response value.
 pub fn best_response_value(
     rg: &RangeGame,
     my: usize,
@@ -261,6 +276,7 @@ pub fn best_response_value(
     br_walk(rg, my, 0, &opp_reach, opp_behavior).iter().sum()
 }
 
+/// Computes br walk.
 fn br_walk(
     rg: &RangeGame,
     my: usize,
@@ -316,6 +332,7 @@ fn br_walk(
     }
 }
 
+/// Computes exploitability.
 pub fn exploitability(
     rg: &RangeGame,
     b0: &HashMap<String, Vec<f64>>,
@@ -324,11 +341,13 @@ pub fn exploitability(
     best_response_value(rg, 0, b1) + best_response_value(rg, 1, b0)
 }
 
+/// Compute the security value.
 pub fn security_value(rg: &RangeGame, b0: &HashMap<String, Vec<f64>>) -> f64 {
     -best_response_value(rg, 1, b0)
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::best_response::{best_response_p1_from_matrix, safety_verify_from_matrix};
@@ -337,6 +356,7 @@ mod tests {
     use crate::river_range::RangeGame;
 
     #[test]
+    /// Verifies that range br matches matrix dp on compact river.
     fn range_br_matches_matrix_dp_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -366,6 +386,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that range CFR plus matches linear program blueprint on compact river.
     fn range_cfr_plus_matches_lp_blueprint_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -393,6 +414,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that dcfr and pcfr variants converge on compact river.
     fn dcfr_and_pcfr_variants_converge_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -408,6 +430,7 @@ mod tests {
 
     #[test]
     #[ignore = "full river blueprint timing; run explicitly in release mode"]
+    /// Verifies that full river smoke blueprint CFR.
     fn full_river_smoke_blueprint_cfr() {
         use crate::hand_eval::card;
         use crate::holdem::{HoldemRules, RiverEndgame};

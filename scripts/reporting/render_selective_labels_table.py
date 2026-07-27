@@ -1,4 +1,4 @@
-""
+"""Render selective labels table. See Experiments and supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -13,10 +13,12 @@ NS = [1_000, 10_000, 100_000]
 
 
 def _g(summary, method, rho, n):
+    """Compute g for the render selective labels table workflow."""
     return summary[f"{method}|{rho}|{n}"]
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     d = json.loads(SRC.read_text())
     s = d["summary"]
     seeds = len(d["seeds"])
@@ -25,6 +27,7 @@ def main() -> None:
     orc = _g(s, "oracle", RHO, 0)
 
     def row(method, n, label, bold=False):
+        """Format one result row for the generated report."""
         cell = _g(s, method, RHO, n)
         cert, real = cell["certified"], cell["realized"]
         cov = cell["coverage"]

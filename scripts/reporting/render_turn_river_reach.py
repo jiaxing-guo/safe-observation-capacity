@@ -1,4 +1,4 @@
-""
+"""Render turn river reach. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -25,6 +25,7 @@ ARM_ORDER = ["core", "obs", "em", "obs_seed"]
 
 
 def _fmt(value: float | None, digits: int = 3) -> str:
+    """Compute fmt for the render turn river reach workflow."""
     if value is None:
         return "n/a"
     if abs(value) < 5e-6:
@@ -33,12 +34,14 @@ def _fmt(value: float | None, digits: int = 3) -> str:
 
 
 def _fmt_reach(value: float | None) -> str:
+    """Compute fmt reach for the render turn river reach workflow."""
     if value is None:
         return "n/a"
     return f"${value:.2f}$"
 
 
 def _first_v_ref(results: list[dict]) -> float | None:
+    """Compute first v ref for the render turn river reach workflow."""
     for result in results:
         if not result.get("ok"):
             continue
@@ -51,6 +54,7 @@ def _first_v_ref(results: list[dict]) -> float | None:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     data = json.load(IN_JSON.open())
     aggregate = data["aggregate"]
     v_ref = _first_v_ref(data["results"])

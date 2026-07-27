@@ -1,4 +1,4 @@
-""
+"""Run the turn river value plateau experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import multiprocessing as mp
@@ -48,11 +48,13 @@ _G: dict = {}
 
 
 def _init_worker(payload: dict) -> None:
+    """Initialize process-local state for a parallel worker."""
     _G.update(payload)
     _G["payoffs"] = build_payoff(payload["game"])
 
 
 def _rw_error(center, behavior_map, omega, fold_labels):
+    """Compute rw error for the run turn river value plateau workflow."""
     num = den = 0.0
     for label, ref in behavior_map.items():
         w = omega.get(label, 0.0)
@@ -67,6 +69,7 @@ def _rw_error(center, behavior_map, omega, fold_labels):
 
 
 def _solve_cell(episodes: int) -> dict:
+    """Solve cell for the run turn river value plateau workflow."""
     t0 = time.time()
     game = _G["game"]
     v_ref = _G["v_ref"]
@@ -106,6 +109,7 @@ def _solve_cell(episodes: int) -> dict:
     )
 
     def realized(resp):
+        """Evaluate a realization plan against the selected opponent."""
         return payoff.bilinear(list(resp.realization), y_star_vec) - v_ref
 
     g_core = realized(core)
@@ -127,6 +131,7 @@ def _solve_cell(episodes: int) -> dict:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     sf0 = compile_game(game, 0)
     sf1 = compile_game(game, 1)

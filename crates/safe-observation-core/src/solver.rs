@@ -1,3 +1,5 @@
+//! Solver algorithms for safe observation. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River.
+
 use std::collections::HashMap;
 
 use crate::best_response::safety_verify_tree;
@@ -5,11 +7,13 @@ use crate::cfr::{normalize, regret_matching};
 use crate::game::{Game, Node};
 use crate::sequence_form::SequenceForm;
 
+/// Stores state for info node.
 struct InfoNode {
     regret_sum: Vec<f64>,
     strategy_sum: Vec<f64>,
 }
 
+/// Stores state for CFR blueprint.
 pub struct CfrBlueprint {
     pub realization: Vec<f64>,
 
@@ -19,6 +23,7 @@ pub struct CfrBlueprint {
     pub value: f64,
 }
 
+/// Computes CFR walk.
 fn cfr_walk<G: Game>(
     game: &G,
     state: &G::State,
@@ -83,6 +88,7 @@ fn cfr_walk<G: Game>(
     }
 }
 
+/// Computes average behavior.
 fn average_behavior(
     sf: &SequenceForm,
     nodes: &HashMap<String, InfoNode>,
@@ -96,6 +102,7 @@ fn average_behavior(
     out
 }
 
+/// Solve blueprint CFR.
 pub fn solve_blueprint_cfr<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -121,15 +128,19 @@ pub fn solve_blueprint_cfr<G: Game>(
     }
 }
 
+/// Stores state for es random-number generator.
 struct EsRng {
     state: u64,
 }
 
+/// Implements operations for `EsRng`.
 impl EsRng {
+    /// Constructs a new value from the supplied configuration.
     fn new(seed: u64) -> Self {
         Self { state: seed }
     }
 
+    /// Draw the next uniform floating-point sample.
     fn next_f64(&mut self) -> f64 {
         self.state = self.state.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut z = self.state;
@@ -139,6 +150,7 @@ impl EsRng {
         (z >> 11) as f64 / (1u64 << 53) as f64
     }
 
+    /// Draw a sample from the configured distribution.
     fn sample(&mut self, probs: &[f64]) -> usize {
         let u = self.next_f64();
         let mut acc = 0.0;
@@ -152,6 +164,7 @@ impl EsRng {
     }
 }
 
+/// Computes external sampling.
 fn external_sampling<G: Game>(
     game: &G,
     state: &G::State,
@@ -221,6 +234,7 @@ fn external_sampling<G: Game>(
     }
 }
 
+/// Solve blueprint mccfr.
 pub fn solve_blueprint_mccfr<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -251,6 +265,7 @@ pub fn solve_blueprint_mccfr<G: Game>(
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::goofspiel::Goofspiel;
@@ -260,9 +275,11 @@ mod tests {
     use crate::payoff::{build, build_kuhn};
     use crate::sequence_form::{compile, compile_kuhn};
 
+    /// Defines the Kuhn value constant.
     const KUHN_VALUE: f64 = -1.0 / 18.0;
 
     #[test]
+    /// Verifies that CFR converges to Kuhn value.
     fn cfr_converges_to_kuhn_value() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -281,6 +298,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that CFR value is a valid lower bound Kuhn.
     fn cfr_value_is_a_valid_lower_bound_kuhn() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -295,6 +313,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that CFR converges to Leduc value.
     fn cfr_converges_to_leduc_value() {
         let sf0 = compile_leduc(0);
         let sf1 = compile_leduc(1);
@@ -314,6 +333,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that CFR converges to goofspiel value.
     fn cfr_converges_to_goofspiel_value() {
         let sf0 = compile(&Goofspiel, 0);
         let sf1 = compile(&Goofspiel, 1);
@@ -327,6 +347,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that CFR is reproducible.
     fn cfr_is_reproducible() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -337,6 +358,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that CFR blueprint is approximately safe Kuhn.
     fn cfr_blueprint_is_approximately_safe_kuhn() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -351,6 +373,7 @@ mod tests {
 
     #[test]
     #[ignore = "scaling diagnostic (~10s release / minutes debug); run with --release -- --ignored"]
+    /// Verifies that CFR matches linear program on big Leduc.
     fn cfr_matches_lp_on_big_leduc() {
         let sf0 = compile(&LeducBig, 0);
         let sf1 = compile(&LeducBig, 1);
@@ -368,6 +391,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that big Leduc is a well formed larger game.
     fn big_leduc_is_a_well_formed_larger_game() {
         let sf0 = compile(&LeducBig, 0);
         let sf1 = compile(&LeducBig, 1);
@@ -385,6 +409,7 @@ mod tests {
 
     #[test]
     #[ignore = "scaling benchmark; run with --release -- --ignored --nocapture"]
+    /// Verifies that bench scaling Leduc vs big.
     fn bench_scaling_leduc_vs_big() {
         use std::time::Instant;
         for (name, sf0, sf1) in [
@@ -457,6 +482,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that mccfr converges to Kuhn value.
     fn mccfr_converges_to_kuhn_value() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -471,6 +497,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that mccfr is reproducible.
     fn mccfr_is_reproducible() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -481,6 +508,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that mccfr matches linear program on small river.
     fn mccfr_matches_lp_on_small_river() {
         use crate::hand_eval::card;
         use crate::holdem::{HoldemRules, RiverEndgame};
@@ -521,6 +549,7 @@ mod tests {
         assert!(sf0.constraint_residual(&bp.realization) < 1e-9);
     }
 
+    /// Stores state for scale row.
     struct ScaleRow {
         combos: usize,
         seq: usize,
@@ -537,6 +566,7 @@ mod tests {
 
     #[test]
     #[ignore = "HUNL scale diagnostic; run with --release -- --ignored --nocapture"]
+    /// Verifies that bench holdem scale.
     fn bench_holdem_scale() {
         use crate::best_response::{best_response_p1_tree, safety_verify_tree};
         use crate::hand_eval::card;

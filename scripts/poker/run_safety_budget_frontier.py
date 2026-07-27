@@ -1,4 +1,4 @@
-""
+"""Run the safety budget frontier experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 from pathlib import Path
@@ -19,6 +19,7 @@ TRACE = ["passive_public", "public_robust", "point_response", "safe_active_decen
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     cells = []
     vref = None
     for rho in RHO_GRID:

@@ -1,4 +1,4 @@
-""
+"""Construct the public twins experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ MIN_GAP = 0.15
 
 
 def _infos_by_history(sf):
+    """Compute infos by history for the construct public twins workflow."""
     by = defaultdict(list)
     for info in sf.info_sets:
         _hand, hist = info.label.split("|", 1)
@@ -32,7 +33,7 @@ def _infos_by_history(sf):
 
 
 def _pick_targets(sf, eq, yr, max_targets=4):
-    ""
+    """Compute pick targets for the construct public twins workflow."""
     by = _infos_by_history(sf)
     cands = []
     for hist, infos in by.items():
@@ -62,7 +63,7 @@ def _pick_targets(sf, eq, yr, max_targets=4):
 
 
 def _perturbed(eq, info1, m1, info2, m2, eps, sign):
-    ""
+    """Compute perturbed for the construct public twins workflow."""
     beh = {k: list(v) for k, v in eq.items()}
     for info, m, s in ((info1, m1, +1.0), (info2, m2, -1.0)):
         acts = [a for a, _ in info.children]
@@ -77,9 +78,10 @@ def _perturbed(eq, info1, m1, info2, m2, eps, sign):
 
 
 def _tv_public(sf, yr_a, yr_b):
-    ""
+    """Compute tv public for the construct public twins workflow."""
 
     def summed(yr):
+        """Compute summed for the construct public twins workflow."""
         out = defaultdict(float)
         for info in sf.info_sets:
             _hand, hist = info.label.split("|", 1)
@@ -92,6 +94,7 @@ def _tv_public(sf, yr_a, yr_b):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf = compile_game(GAME, 1)
     payoff = build_payoff(GAME)
     v_ref = solve_blueprint(GAME, method="lp").value

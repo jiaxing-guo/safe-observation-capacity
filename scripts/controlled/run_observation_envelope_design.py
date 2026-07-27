@@ -1,4 +1,4 @@
-""
+"""Run the observation envelope design experiment. See supplementary Additional Experiments."""
 
 import json
 import os
@@ -53,6 +53,7 @@ def _population_stores(
     agent_behavior: dict[str, list[float]],
     opp_behavior: dict[str, list[float]],
 ) -> tuple[OpponentEvidenceStore, OpponentEvidenceStore]:
+    """Compute population stores for the run observation envelope design workflow."""
     ev_point = OpponentEvidenceStore.for_game(game)
     ev_public = OpponentEvidenceStore.for_game(game)
     _pay, show, fold = native.simulate_showdown(
@@ -67,7 +68,7 @@ def _population_stores(
 
 
 def _adaptive_radius(p: float, n: int, scale: float) -> float:
-    ""
+    """Compute adaptive radius for the run observation envelope design workflow."""
     if n <= 0:
         return 1.0
     return scale * empirical_bernstein_halfwidth(n, p * (1.0 - p), DELTA)
@@ -76,7 +77,7 @@ def _adaptive_radius(p: float, n: int, scale: float) -> float:
 def _box_uniform_all(
     center: dict[str, list[float]], radius: float
 ) -> dict[str, list[tuple[float, float]]]:
-    ""
+    """Compute box uniform all for the run observation envelope design workflow."""
     return {
         label: [(max(0.0, p - radius), min(1.0, p + radius)) for p in dist]
         for label, dist in center.items()
@@ -89,7 +90,7 @@ def _box_adaptive(
     support: dict[str, int],
     scale: float,
 ) -> dict[str, list[tuple[float, float]]]:
-    ""
+    """Compute box adaptive for the run observation envelope design workflow."""
     box: dict[str, list[tuple[float, float]]] = {}
     for label, dist in center.items():
         if label not in labels:
@@ -111,7 +112,7 @@ def _covers_uniform(
     omega: dict[str, float],
     radius: float,
 ) -> bool:
-    ""
+    """Compute covers uniform for the run observation envelope design workflow."""
     for label, dist in behavior.items():
         if omega.get(label, 0.0) <= 0.0:
             continue
@@ -130,7 +131,7 @@ def _covers_adaptive(
     support: dict[str, int],
     scale: float,
 ) -> bool:
-    ""
+    """Compute covers adaptive for the run observation envelope design workflow."""
     for label, dist in behavior.items():
         if omega.get(label, 0.0) <= 0.0:
             continue
@@ -145,7 +146,7 @@ def _covers_adaptive(
 
 
 def _solve(game, groups, pub_intervals, box, omega, payoff, y_star, v_ref):
-    ""
+    """Solve the configured optimization problem."""
     try:
         resp = robust_safe_response_envelope(
             groups,
@@ -167,6 +168,7 @@ def _solve(game, groups, pub_intervals, box, omega, payoff, y_star, v_ref):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
@@ -306,7 +308,7 @@ def main() -> None:
 def _honest_cert(
     cells: list[dict], key: str
 ) -> tuple[float | None, float | None, float]:
-    ""
+    """Compute honest cert for the run observation envelope design workflow."""
     for c in cells:
         if c.get("feasible") and c.get("covers"):
             return c.get("ell_gain"), c.get("real_gain"), c[key]
@@ -314,6 +316,7 @@ def _honest_cert(
 
 
 def _report(rows: list[dict], floor: float) -> None:
+    """Assemble the reader-facing summary for one experiment."""
     by = {r["opponent"]: r for r in rows}
 
     print(

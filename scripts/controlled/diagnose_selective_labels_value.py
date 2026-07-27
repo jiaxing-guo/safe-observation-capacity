@@ -1,4 +1,4 @@
-""
+"""Diagnose selective labels value. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ SEED = 2026
 
 
 def make_model(gem_lo, gem_hi, qG_gem, qB_gem, selG_gem, selB_gem, m=30):
-    ""
+    """Create model for the diagnose selective labels value workflow."""
     s = np.linspace(0.0, 1.0, m)
     p = np.full(m, 1.0 / m)
     gem = (s >= gem_lo) & (s <= gem_hi)
@@ -41,7 +41,7 @@ def make_model(gem_lo, gem_hi, qG_gem, qB_gem, selG_gem, selB_gem, m=30):
 
 
 def run_once(model, rho, N=N, seed=SEED):
-    ""
+    """Run the once experiment for the diagnose selective labels value workflow."""
     D.M = model["m"]
     D._build_model = lambda: model
     D._init()
@@ -67,7 +67,7 @@ def run_once(model, rho, N=N, seed=SEED):
 
 
 def band_decomp(model, pi):
-    ""
+    """Compute band decomp for the diagnose selective labels value workflow."""
     p, q, gem = model["p"], model["q_true"], model["censored"]
     s = model["s"]
     val = p * pi * (q - C)
@@ -77,6 +77,7 @@ def band_decomp(model, pi):
 
 
 def main():
+    """Run the command-line entry point."""
     base = dict(
         gem_lo=0.40, gem_hi=0.66, qG_gem=0.80, qB_gem=0.30, selG_gem=0.15, selB_gem=0.60
     )

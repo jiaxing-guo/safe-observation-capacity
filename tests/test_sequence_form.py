@@ -1,4 +1,4 @@
-""
+"""Regression tests for test sequence form. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -7,6 +7,7 @@ from safe_observation.sequence_form import compile_kuhn, kuhn_sizes
 
 @pytest.mark.parametrize("player", [0, 1])
 def test_shapes(player):
+    """Verify that compiled sequence-form matrices have the expected shapes."""
     sf = compile_kuhn(player)
     assert sf.num_sequences == 13
     assert sf.num_infosets == 6
@@ -19,12 +20,14 @@ def test_shapes(player):
 
 
 def test_empty_sequence_index_zero():
+    """Verify that empty sequence index zero."""
     sf = compile_kuhn(0)
     assert sf.sequences[0] == ""
     assert sf.seq_index[""] == 0
 
 
 def test_rhs_is_root_indicator():
+    """Verify that rhs is root indicator."""
     sf = compile_kuhn(1)
     assert sf.e[0] == 1.0
     assert all(v == 0.0 for v in sf.e[1:])
@@ -32,7 +35,7 @@ def test_rhs_is_root_indicator():
 
 @pytest.mark.parametrize("player", [0, 1])
 def test_uniform_plan_satisfies_constraints(player):
-
+    """Verify that uniform plan satisfies constraints."""
     sf = compile_kuhn(player)
     x = sf.realization_from_behavior()
     assert abs(x[0] - 1.0) < 1e-12
@@ -40,6 +43,7 @@ def test_uniform_plan_satisfies_constraints(player):
 
 
 def test_biased_plan_satisfies_constraints():
+    """Verify that biased plan satisfies constraints."""
     sf = compile_kuhn(1)
     behavior = {info.label: [0.25, 0.75] for info in sf.info_sets}
     x = sf.realization_from_behavior(behavior)
@@ -47,6 +51,7 @@ def test_biased_plan_satisfies_constraints():
 
 
 def test_infeasible_vector_has_positive_residual():
+    """Verify that infeasible vector has positive residual."""
     sf = compile_kuhn(0)
     x = list(sf.realization_from_behavior())
     x[1] += 0.5
@@ -54,6 +59,7 @@ def test_infeasible_vector_has_positive_residual():
 
 
 def test_parent_links():
+    """Verify that each child sequence points to the correct parent."""
     sf = compile_kuhn(0)
 
     parent = sf.seq_index["0:>p"]
@@ -62,11 +68,13 @@ def test_parent_links():
 
 
 def test_invalid_player_raises():
+    """Verify that invalid player raises."""
     with pytest.raises(ValueError):
         compile_kuhn(2)
 
 
 def test_kuhn_sizes_unchanged():
+    """Verify that Kuhn sizes unchanged."""
     sizes = kuhn_sizes()
     assert (sizes.num_sequences_p1, sizes.num_infosets_p1) == (13, 6)
     assert (sizes.num_sequences_p2, sizes.num_infosets_p2) == (13, 6)

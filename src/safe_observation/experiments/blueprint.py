@@ -1,4 +1,4 @@
-""
+"""Blueprint primitives for safe-observation experiments. See Safe Active De-censoring, Experiments, and supplementary Game Instances and Experimental Setup."""
 
 from pathlib import Path
 from typing import Any
@@ -11,7 +11,7 @@ KNOWN_KUHN_VALUE = -1.0 / 18.0
 def run_kuhn_blueprint(
     method: str = "lp", iterations: int = 100_000, out_dir: str | Path = "results"
 ) -> dict[str, Any]:
-    ""
+    """Run the Kuhn blueprint experiment."""
     solution = solvers.solve_blueprint("kuhn", method=method, iterations=iterations)
     results: dict[str, Any] = {
         "game": "kuhn",

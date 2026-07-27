@@ -1,4 +1,4 @@
-""
+"""Render baselines table. See Experiments and supplementary Additional Experiments."""
 
 import json
 from pathlib import Path
@@ -19,7 +19,7 @@ CENSORED = {"river_overfold_w80", "turn_overfold_w70"}
 
 
 def wilcoxon_p(diffs):
-    ""
+    """Compute wilcoxon p for the render baselines table workflow."""
     try:
         from scipy.stats import wilcoxon
 

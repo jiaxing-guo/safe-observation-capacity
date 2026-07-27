@@ -1,13 +1,17 @@
+//! Best response algorithms for safe observation. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River.
+
 use crate::game::Game;
 use crate::payoff::{apply_a_y, apply_at_x, PayoffMatrix};
 use crate::sequence_form::SequenceForm;
 
+/// Stores state for tree best response.
 pub struct TreeBestResponse {
     pub value: f64,
 
     pub realization: Vec<f64>,
 }
 
+/// Computes best response dp.
 fn best_response_dp(
     sf_r: &SequenceForm,
     mut seq_value: Vec<f64>,
@@ -45,10 +49,12 @@ fn best_response_dp(
     TreeBestResponse { value, realization }
 }
 
+/// Computes treeplex opt.
 pub fn treeplex_opt(sf_r: &SequenceForm, seq_value: Vec<f64>, maximize: bool) -> TreeBestResponse {
     best_response_dp(sf_r, seq_value, maximize)
 }
 
+/// Computes safety verify from matrix.
 pub fn safety_verify_from_matrix(
     sf1: &SequenceForm,
     payoff: &PayoffMatrix,
@@ -57,6 +63,7 @@ pub fn safety_verify_from_matrix(
     best_response_dp(sf1, payoff.matvec_at_x(x), false)
 }
 
+/// Computes best response player-one from matrix.
 pub fn best_response_p1_from_matrix(
     sf0: &SequenceForm,
     payoff: &PayoffMatrix,
@@ -65,6 +72,7 @@ pub fn best_response_p1_from_matrix(
     best_response_dp(sf0, payoff.matvec_a_y(y), true)
 }
 
+/// Computes safety verify tree.
 pub fn safety_verify_tree<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -74,6 +82,7 @@ pub fn safety_verify_tree<G: Game>(
     best_response_dp(sf1, apply_at_x(game, sf0, sf1, x), false)
 }
 
+/// Computes best response player-one tree.
 pub fn best_response_p1_tree<G: Game>(
     game: &G,
     sf0: &SequenceForm,
@@ -84,6 +93,7 @@ pub fn best_response_p1_tree<G: Game>(
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use std::collections::HashMap;
 
@@ -95,6 +105,7 @@ mod tests {
     use crate::payoff::{build, build_kuhn};
     use crate::sequence_form::{compile, compile_kuhn};
 
+    /// Computes pseudo.
     fn pseudo(n: usize, seed: u64) -> Vec<f64> {
         let mut s = seed;
         (0..n)
@@ -107,6 +118,7 @@ mod tests {
             .collect()
     }
 
+    /// Computes random plan.
     fn random_plan(sf: &SequenceForm, seed: u64) -> Vec<f64> {
         let mut behavior: HashMap<String, Vec<f64>> = HashMap::new();
         for (i, info) in sf.info_sets.iter().enumerate() {
@@ -123,6 +135,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that safety matches linear program Kuhn.
     fn safety_matches_lp_kuhn() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -148,6 +161,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that best response matches linear program Kuhn.
     fn best_response_matches_lp_kuhn() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -168,6 +182,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that safety matches linear program Leduc.
     fn safety_matches_lp_leduc() {
         let sf0 = compile_leduc(0);
         let sf1 = compile_leduc(1);
@@ -190,6 +205,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that best response matches linear program Leduc.
     fn best_response_matches_lp_leduc() {
         let sf0 = compile_leduc(0);
         let sf1 = compile_leduc(1);
@@ -209,6 +225,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that safety matches linear program goofspiel.
     fn safety_matches_lp_goofspiel() {
         let sf0 = compile(&Goofspiel, 0);
         let sf1 = compile(&Goofspiel, 1);
@@ -228,6 +245,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that backends reproducible and agree.
     fn backends_reproducible_and_agree() {
         let sf0 = compile_kuhn(0);
         let sf1 = compile_kuhn(1);
@@ -241,6 +259,7 @@ mod tests {
 
     #[test]
     #[ignore = "timing benchmark; run with --release -- --ignored --nocapture"]
+    /// Verifies that bench backends vs linear program Leduc.
     fn bench_backends_vs_lp_leduc() {
         use std::time::Instant;
         let sf0 = compile_leduc(0);

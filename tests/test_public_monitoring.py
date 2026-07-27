@@ -1,4 +1,4 @@
-""
+"""Regression tests for test public monitoring. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -20,24 +20,26 @@ LEDUC_VALUE = -0.08560642
 
 
 def test_public_key_kuhn_drops_private_card():
-
+    """Verify that public key Kuhn drops private card."""
     assert public_key("kuhn", "0:pb") == "pb"
     assert public_key("kuhn", "1:pb") == "pb"
     assert public_key("kuhn", "2:") == ""
 
 
 def test_public_key_leduc_drops_private_rank():
-
+    """Verify that public key Leduc drops private rank."""
     assert public_key("leduc", "J|Q|cr|c") == "Q|cr|c"
     assert public_key("leduc", "K|Q|cr|c") == "Q|cr|c"
 
 
 def test_public_key_unknown_game_raises():
+    """Verify that public key unknown game raises."""
     with pytest.raises(ValueError):
         public_key("chess", "anything")
 
 
 def test_public_groups_partition_all_labels():
+    """Verify that public groups partition all labels."""
     store = OpponentEvidenceStore.for_game("leduc")
     groups = store.public_groups()
 
@@ -51,6 +53,7 @@ def test_public_groups_partition_all_labels():
 
 
 def test_public_intervals_aggregate_counts_over_private_card():
+    """Verify that public intervals aggregate counts over private card."""
     store = OpponentEvidenceStore.for_game("leduc")
 
     groups = store.public_groups()
@@ -69,6 +72,7 @@ def test_public_intervals_aggregate_counts_over_private_card():
 
 
 def test_public_confidence_set_contains_consistent_opponent():
+    """Verify that public confidence set contains consistent opponent."""
     store = OpponentEvidenceStore.for_game("leduc")
 
     groups = store.public_groups()
@@ -78,6 +82,7 @@ def test_public_confidence_set_contains_consistent_opponent():
 
 
 def test_public_agent_initial_decision_is_safe_and_blueprint_like():
+    """Verify that public agent initial decision is safe and blueprint like."""
     agent = OnlineSafeExploitAgent(game="leduc", monitoring="public")
     decision = agent.select()
     assert decision.safety_value >= LEDUC_VALUE - 1e-6
@@ -86,11 +91,13 @@ def test_public_agent_initial_decision_is_safe_and_blueprint_like():
 
 
 def test_unknown_monitoring_raises():
+    """Verify that unknown monitoring raises."""
     with pytest.raises(ValueError):
         OnlineSafeExploitAgent(game="leduc", monitoring="telepathy")
 
 
 def test_public_monitoring_preserves_safety_kuhn():
+    """Verify that public monitoring preserves safety Kuhn."""
     results = run_online_adaptation(
         static_biased_opponent(bet_prob=0.05),
         rounds=40,
@@ -105,6 +112,7 @@ def test_public_monitoring_preserves_safety_kuhn():
 
 
 def test_public_monitoring_exploits_static_biased_leduc():
+    """Verify that public monitoring exploits static biased Leduc."""
     results = run_online_adaptation(
         leduc_static_biased_opponent(),
         rounds=60,
@@ -119,7 +127,7 @@ def test_public_monitoring_exploits_static_biased_leduc():
 
 
 def test_public_never_out_exploits_full():
-
+    """Verify that public never out exploits full."""
     opp = leduc_private_state_leak_opponent("J", 0.9)
     full = run_online_adaptation(
         opp,

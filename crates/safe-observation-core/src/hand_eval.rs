@@ -1,25 +1,33 @@
+//! Hand eval algorithms for safe observation. See supplementary Reproducibility for its role in the release workflow.
+
+/// Assign average ranks while preserving tied values.
 const RANKS: [char; 13] = [
     '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A',
 ];
 
+/// Defines the suits constant.
 const SUITS: [char; 4] = ['c', 'd', 'h', 's'];
 
 #[inline]
+/// Computes rank of.
 pub fn rank_of(card: u8) -> u8 {
     card % 13
 }
 
 #[inline]
+/// Computes suit of.
 pub fn suit_of(card: u8) -> u8 {
     card / 13
 }
 
 #[inline]
+/// Computes card.
 pub fn card(rank: u8, suit: u8) -> u8 {
     debug_assert!(rank < 13 && suit < 4);
     suit * 13 + rank
 }
 
+/// Computes card str.
 pub fn card_str(card: u8) -> String {
     let mut s = String::with_capacity(2);
     s.push(RANKS[rank_of(card) as usize]);
@@ -27,6 +35,7 @@ pub fn card_str(card: u8) -> String {
     s
 }
 
+/// Computes straight high.
 fn straight_high(rank_mask: u16) -> Option<u8> {
     let ext = (rank_mask << 1) | ((rank_mask >> 12) & 1);
     for high in (4..=13).rev() {
@@ -38,6 +47,7 @@ fn straight_high(rank_mask: u16) -> Option<u8> {
     None
 }
 
+/// Computes pack.
 fn pack(category: u32, tiebreakers: &[u8]) -> u32 {
     let mut s = category;
     for i in 0..5 {
@@ -47,6 +57,7 @@ fn pack(category: u32, tiebreakers: &[u8]) -> u32 {
     s
 }
 
+/// Computes top ranks.
 fn top_ranks(mask: u16, n: usize) -> Vec<u8> {
     let mut out = Vec::with_capacity(n);
     for r in (0..13).rev() {
@@ -60,6 +71,7 @@ fn top_ranks(mask: u16, n: usize) -> Vec<u8> {
     out
 }
 
+/// Computes top ranks excluding.
 fn top_ranks_excluding(mask: u16, skip: &[u8], n: usize) -> Vec<u8> {
     let mut out = Vec::with_capacity(n);
     for r in (0..13).rev() {
@@ -76,16 +88,26 @@ fn top_ranks_excluding(mask: u16, skip: &[u8], n: usize) -> Vec<u8> {
     out
 }
 
+/// Defines the high card constant.
 const HIGH_CARD: u32 = 0;
+/// Defines the pair constant.
 const PAIR: u32 = 1;
+/// Defines the two pair constant.
 const TWO_PAIR: u32 = 2;
+/// Defines the trips constant.
 const TRIPS: u32 = 3;
+/// Defines the straight constant.
 const STRAIGHT: u32 = 4;
+/// Persist the accumulated experiment rows to the output file.
 const FLUSH: u32 = 5;
+/// Defines the full house constant.
 const FULL_HOUSE: u32 = 6;
+/// Defines the quads constant.
 const QUADS: u32 = 7;
+/// Defines the straight flush constant.
 const STRAIGHT_FLUSH: u32 = 8;
 
+/// Computes evaluate7.
 pub fn evaluate7(cards: &[u8]) -> u32 {
     debug_assert_eq!(cards.len(), 7, "evaluate7 needs exactly 7 cards");
     let mut rank_count = [0u8; 13];
@@ -163,14 +185,17 @@ pub fn evaluate7(cards: &[u8]) -> u32 {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
 
+    /// Computes hand.
     fn hand(spec: &[(u8, u8)]) -> Vec<u8> {
         spec.iter().map(|&(r, s)| card(r, s)).collect()
     }
 
     #[test]
+    /// Verifies that category ordering is correct.
     fn category_ordering_is_correct() {
         let high = hand(&[(12, 0), (10, 1), (8, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
         let pair = hand(&[(12, 0), (12, 1), (8, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
@@ -199,6 +224,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that higher pair beats lower pair.
     fn higher_pair_beats_lower_pair() {
         let aces = hand(&[(12, 0), (12, 1), (8, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
         let kings = hand(&[(11, 0), (11, 1), (8, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
@@ -206,6 +232,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that pair kicker breaks ties.
     fn pair_kicker_breaks_ties() {
         let ace_kick = hand(&[(8, 0), (8, 1), (12, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
         let king_kick = hand(&[(8, 0), (8, 1), (11, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
@@ -213,6 +240,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that wheel is a straight below six high.
     fn wheel_is_a_straight_below_six_high() {
         let wheel = hand(&[(12, 0), (0, 1), (1, 2), (2, 3), (3, 0), (10, 1), (11, 2)]);
         let six_high = hand(&[(0, 0), (1, 1), (2, 2), (3, 3), (4, 0), (10, 1), (11, 2)]);
@@ -223,6 +251,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that broadway is the top straight.
     fn broadway_is_the_top_straight() {
         let broadway = hand(&[(8, 0), (9, 1), (10, 2), (11, 3), (12, 0), (1, 1), (0, 2)]);
         assert_eq!(evaluate7(&broadway) >> 20, STRAIGHT);
@@ -231,6 +260,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that full house uses higher trip as the three.
     fn full_house_uses_higher_trip_as_the_three() {
         let two_trips = hand(&[(7, 0), (7, 1), (7, 2), (6, 3), (6, 0), (6, 1), (0, 2)]);
         let s = evaluate7(&two_trips);
@@ -240,6 +270,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that flush beats a lower flush by top card.
     fn flush_beats_a_lower_flush_by_top_card() {
         let ace_flush = hand(&[(12, 0), (9, 0), (7, 0), (5, 0), (2, 0), (1, 1), (0, 2)]);
         let king_flush = hand(&[(11, 0), (9, 0), (7, 0), (5, 0), (2, 0), (1, 1), (0, 2)]);
@@ -247,6 +278,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that identical hands tie.
     fn identical_hands_tie() {
         let a = hand(&[(12, 0), (12, 1), (8, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
         let b = hand(&[(12, 0), (12, 1), (8, 2), (5, 3), (3, 0), (1, 1), (0, 2)]);
@@ -254,6 +286,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that card helpers round trip.
     fn card_helpers_round_trip() {
         for c in 0..52u8 {
             assert_eq!(card(rank_of(c), suit_of(c)), c);

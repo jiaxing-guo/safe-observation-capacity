@@ -1,4 +1,4 @@
-""
+"""Render deployment rate. See Experiments and supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ SHORT = {
 
 
 def _load_rows():
+    """Load rows for the render deployment rate workflow."""
     rows = []
     base = "results/sad_deploy_holdem_tr_b2.json"
     with open(base) as fh:
@@ -30,6 +31,7 @@ def _load_rows():
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     rows = _load_rows()
     oracle = {r["opponent"]: r["certified"] for r in rows if r["mode"] == "oracle"}
     Ns = sorted({r["episodes"] for r in rows if r["mode"] == "sad"})

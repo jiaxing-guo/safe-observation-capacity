@@ -1,4 +1,4 @@
-""
+"""Evaluate the Fano response experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ BETA = 1e6
 
 
 def _reach_vector(triv_iv, cont_beh, targets, weights, v_ref, rho):
-    ""
+    """Compute reach vector for the evaluate Fano response workflow."""
     pr = robust_safe_response_probe(
         triv_iv,
         cont_beh,
@@ -49,7 +49,7 @@ def _reach_vector(triv_iv, cont_beh, targets, weights, v_ref, rho):
 
 
 def _rstar(triv_iv, cont_beh, targets, lam, v_ref, rho, iters):
-    ""
+    """Compute rstar for the evaluate Fano response workflow."""
     M = len(targets)
     fscale = max(lam) if max(lam) > 1e-12 else 1.0
     eta = math.sqrt(8.0 * math.log(M) / iters) if M > 1 else 0.0
@@ -86,6 +86,7 @@ def _rstar(triv_iv, cont_beh, targets, lam, v_ref, rho, iters):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     t0 = time.time()
     sf = compile_game(GAME, 1)
     fold_idx = _fold_action_indices(sf)

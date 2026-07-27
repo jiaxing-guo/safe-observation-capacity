@@ -1,4 +1,4 @@
-""
+"""Run the active de-censoring experiment. See Safe Active De-censoring and supplementary Algorithms."""
 
 import json
 import os
@@ -39,6 +39,7 @@ TOL = 1e-6
 
 
 def _out_path(shard: int | None = None) -> Path:
+    """Compute out path for the run active de-censoring workflow."""
     base = os.environ.get("ONL_OUT")
     if base:
         return Path(base)
@@ -47,7 +48,7 @@ def _out_path(shard: int | None = None) -> Path:
 
 
 def _empirical_event_constraints(sf1, ev_point, omega, fold_idx, delta, method):
-    ""
+    """Compute empirical event constraints for the run active de-censoring workflow."""
     reached = [
         info
         for info in sf1.info_sets
@@ -86,7 +87,7 @@ def _empirical_event_constraints(sf1, ev_point, omega, fold_idx, delta, method):
 
 
 def _observation_covers(sf1, ev_point, omega, fold_idx, delta, method, y_star) -> bool:
-    ""
+    """Compute observation covers for the run active de-censoring workflow."""
     reached = [
         info
         for info in sf1.info_sets
@@ -112,6 +113,7 @@ def _observation_covers(sf1, ev_point, omega, fold_idx, delta, method, y_star) -
 
 
 def _cell_keys() -> list[tuple[str, int]]:
+    """Compute cell keys for the run active de-censoring workflow."""
     suite_names = list(_suite_cache().keys())
     cells = [(name, n) for name in suite_names for n in GRID]
     return [c for k, c in enumerate(cells) if k % N_SHARDS == SHARD_IDX]
@@ -121,6 +123,7 @@ _SUITE: dict[str, Any] | None = None
 
 
 def _suite_cache() -> dict[str, Any]:
+    """Compute suite cache for the run active de-censoring workflow."""
     global _SUITE
     if _SUITE is None:
         sf1 = compile_game(GAME, 1)
@@ -131,6 +134,7 @@ def _suite_cache() -> dict[str, Any]:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     if MERGE:
         _merge()
         return
@@ -264,7 +268,7 @@ def main() -> None:
 
 
 def _summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    ""
+    """Summarize the supplied experiment records."""
     by_n: dict[int, list[dict[str, Any]]] = {}
     for r in rows:
         by_n.setdefault(r["episodes"], []).append(r)
@@ -317,6 +321,7 @@ def _summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _print_summary(summary: dict[str, Any]) -> None:
+    """Compute print summary for the run active de-censoring workflow."""
     print("\n  per-N deployment summary:", flush=True)
     for n, s in summary["per_n"].items():
         print(
@@ -329,6 +334,7 @@ def _print_summary(summary: dict[str, Any]) -> None:
 
 
 def _merge() -> None:
+    """Merge the supplied records into this aggregate."""
     shards = sorted(Path("results").glob(f"active_decensoring_{GAME}_shard*.json"))
     if not shards:
         raise SystemExit(f"no shard files for game={GAME} to merge")

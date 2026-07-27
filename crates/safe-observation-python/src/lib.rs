@@ -1,3 +1,5 @@
+//! Python bindings for the safe-observation algorithms. See supplementary Reproducibility for its role in the release workflow.
+
 use std::collections::{BTreeMap, HashMap};
 use std::io::Write;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -17,12 +19,14 @@ use safe_observation_core::{
     version as core_version,
 };
 
+/// Computes unknown game.
 fn unknown_game(game: &str) -> PyErr {
     PyValueError::new_err(format!(
         "unknown game {game:?}; expected 'kuhn', 'leduc', or 'goofspiel'"
     ))
 }
 
+/// Check player.
 fn check_player(player: usize) -> PyResult<()> {
     if player > 1 {
         return Err(PyValueError::new_err(
@@ -32,14 +36,17 @@ fn check_player(player: usize) -> PyResult<()> {
     Ok(())
 }
 
+/// Stores state for native game data.
 struct NativeGameData {
     sf0: seq_form::SequenceForm,
     sf1: seq_form::SequenceForm,
     payoff: payoff::PayoffMatrix,
 }
 
+/// Defines the game data cache constant.
 static GAME_DATA_CACHE: OnceLock<Mutex<HashMap<String, Arc<NativeGameData>>>> = OnceLock::new();
 
+/// Build game data.
 fn build_game_data(game: &str) -> PyResult<NativeGameData> {
     match game {
         "kuhn" => Ok(NativeGameData {
@@ -82,6 +89,7 @@ fn build_game_data(game: &str) -> PyResult<NativeGameData> {
     }
 }
 
+/// Computes game data.
 fn game_data(game: &str) -> PyResult<Arc<NativeGameData>> {
     let cache = GAME_DATA_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     if let Some(data) = cache
@@ -100,16 +108,19 @@ fn game_data(game: &str) -> PyResult<Arc<NativeGameData>> {
     Ok(data)
 }
 
+/// Computes timing enabled.
 fn timing_enabled() -> bool {
     std::env::var("SAFE_OBSERVATION_TIMERS")
         .map(|value| !matches!(value.as_str(), "" | "0" | "false" | "False" | "FALSE"))
         .unwrap_or(false)
 }
 
+/// Computes timing start.
 fn timing_start() -> Option<Instant> {
     timing_enabled().then(Instant::now)
 }
 
+/// Computes timing log.
 fn timing_log(timer: Option<Instant>, scope: &str, stage: &str, details: impl AsRef<str>) {
     if let Some(start) = timer {
         let elapsed = start.elapsed().as_secs_f64();
@@ -127,6 +138,7 @@ fn timing_log(timer: Option<Instant>, scope: &str, stage: &str, details: impl As
     }
 }
 
+/// Computes holdem game.
 fn holdem_game(game: &str) -> Option<holdem::HoldemGame> {
     use holdem::HoldemGame;
     if let Some(suffix) = game.strip_prefix("holdem_tr") {
@@ -141,11 +153,13 @@ fn holdem_game(game: &str) -> Option<holdem::HoldemGame> {
     }
 }
 
+/// Computes chain game.
 fn chain_game(game: &str) -> Option<censored_chain::ChainGame> {
     game.strip_prefix("cchain")
         .and_then(censored_chain::chain_game)
 }
 
+/// Compile a game tree into sequence form.
 fn compile(game: &str, player: usize) -> PyResult<seq_form::SequenceForm> {
     match game {
         "kuhn" => Ok(seq_form::compile_kuhn(player)),
@@ -162,6 +176,7 @@ fn compile(game: &str, player: usize) -> PyResult<seq_form::SequenceForm> {
     }
 }
 
+/// Computes payoff of.
 fn payoff_of(game: &str) -> PyResult<payoff::PayoffMatrix> {
     match game {
         "kuhn" => Ok(payoff::build_kuhn()),
@@ -184,6 +199,7 @@ fn payoff_of(game: &str) -> PyResult<payoff::PayoffMatrix> {
     }
 }
 
+/// Computes probe coefficients of.
 fn probe_coeffs_of(
     game: &str,
     sf0: &seq_form::SequenceForm,
@@ -220,6 +236,7 @@ fn probe_coeffs_of(
     }
 }
 
+/// Computes reach weights of.
 fn reach_weights_of(
     game: &str,
     sf0: &seq_form::SequenceForm,
@@ -248,6 +265,7 @@ fn reach_weights_of(
     }
 }
 
+/// Computes showdown reach of.
 fn showdown_reach_of(
     game: &str,
     sf0: &seq_form::SequenceForm,
@@ -277,12 +295,14 @@ fn showdown_reach_of(
 }
 
 #[pyfunction]
+/// Return the package version.
 fn version() -> String {
     core_version().to_string()
 }
 
 #[pyfunction]
 #[pyo3(signature = (iterations = 100_000))]
+/// Solve Kuhn.
 fn solve_kuhn(iterations: u64) -> (f64, BTreeMap<String, Vec<f64>>) {
     let solution = kuhn::solve(iterations);
     let strategy = solution
@@ -295,6 +315,7 @@ fn solve_kuhn(iterations: u64) -> (f64, BTreeMap<String, Vec<f64>>) {
 
 #[pyfunction]
 #[pyo3(signature = (game, iterations = 100_000, seed = 2026))]
+/// Computes blueprint mccfr.
 fn blueprint_mccfr(
     game: &str,
     iterations: u64,
@@ -348,6 +369,7 @@ fn blueprint_mccfr(
     Ok((bp.value, bp.avg_behavior0))
 }
 
+/// Aliases the type used for sequence form py.
 type SequenceFormPy = (
     Vec<String>,
     Vec<(String, usize, Vec<(String, usize)>)>,
@@ -355,6 +377,7 @@ type SequenceFormPy = (
     Vec<f64>,
 );
 
+/// Computes serialize sequence form.
 fn serialize_sf(sf: &seq_form::SequenceForm) -> SequenceFormPy {
     let info_sets = sf
         .info_sets
@@ -377,12 +400,14 @@ fn serialize_sf(sf: &seq_form::SequenceForm) -> SequenceFormPy {
 }
 
 #[pyfunction]
+/// Computes sequence form.
 fn sequence_form(game: &str, player: usize) -> PyResult<SequenceFormPy> {
     check_player(player)?;
     Ok(serialize_sf(&compile(game, player)?))
 }
 
 #[pyfunction]
+/// Computes sequence form sizes.
 fn sequence_form_sizes(game: &str) -> PyResult<(usize, usize, usize, usize)> {
     let s0 = compile(game, 0)?;
     let s1 = compile(game, 1)?;
@@ -395,6 +420,7 @@ fn sequence_form_sizes(game: &str) -> PyResult<(usize, usize, usize, usize)> {
 }
 
 #[pyfunction]
+/// Computes blueprint linear program.
 fn blueprint_lp(game: &str) -> PyResult<(f64, Vec<f64>)> {
     let timer = timing_start();
     timing_log(
@@ -448,6 +474,7 @@ fn blueprint_lp(game: &str) -> PyResult<(f64, Vec<f64>)> {
 }
 
 #[pyfunction]
+/// Computes blueprint realization.
 fn blueprint_realization(game: &str, player: usize) -> PyResult<Vec<f64>> {
     check_player(player)?;
     let sf0 = compile(game, 0)?;
@@ -466,6 +493,7 @@ fn blueprint_realization(game: &str, player: usize) -> PyResult<Vec<f64>> {
 }
 
 #[pyfunction]
+/// Computes safety verify.
 fn safety_verify(game: &str, x: Vec<f64>) -> PyResult<(f64, Vec<f64>)> {
     let sf0 = compile(game, 0)?;
     if x.len() != sf0.num_sequences() {
@@ -480,6 +508,7 @@ fn safety_verify(game: &str, x: Vec<f64>) -> PyResult<(f64, Vec<f64>)> {
 }
 
 #[pyfunction]
+/// Computes best response.
 fn best_response(game: &str, y: Vec<f64>) -> PyResult<(f64, Vec<f64>)> {
     let sf1 = compile(game, 1)?;
     if y.len() != sf1.num_sequences() {
@@ -494,6 +523,7 @@ fn best_response(game: &str, y: Vec<f64>) -> PyResult<(f64, Vec<f64>)> {
 }
 
 #[pyfunction]
+/// Computes safety constrained best response.
 fn safety_constrained_best_response(
     game: &str,
     opponent_behavior: HashMap<String, Vec<f64>>,
@@ -514,6 +544,7 @@ fn safety_constrained_best_response(
 }
 
 #[pyfunction]
+/// Computes restricted Nash response.
 fn restricted_nash_response(game: &str, y_fix: Vec<f64>, p: f64) -> PyResult<(f64, Vec<f64>)> {
     let sf1 = compile(game, 1)?;
     if y_fix.len() != sf1.num_sequences() {
@@ -531,6 +562,7 @@ fn restricted_nash_response(game: &str, y_fix: Vec<f64>, p: f64) -> PyResult<(f6
 }
 
 #[pyfunction]
+/// Computes robust safe response.
 fn robust_safe_response(
     game: &str,
     intervals: HashMap<String, Vec<(f64, f64)>>,
@@ -545,6 +577,7 @@ fn robust_safe_response(
 
 #[pyfunction]
 #[pyo3(signature = (game, groups, intervals, v_ref, eps_safe, weights = None))]
+/// Computes robust safe response public.
 fn robust_safe_response_public(
     game: &str,
     groups: HashMap<String, Vec<String>>,
@@ -615,6 +648,7 @@ fn robust_safe_response_public(
 
 #[pyfunction]
 #[pyo3(signature = (game, groups, intervals, v_ref, eps_safe, weights = None, max_iters = 64, tol = 1e-7))]
+/// Computes robust safe response public cutting plane.
 fn robust_safe_response_public_cutting_plane(
     game: &str,
     groups: HashMap<String, Vec<String>>,
@@ -660,6 +694,7 @@ fn robust_safe_response_public_cutting_plane(
 
 #[pyfunction]
 #[pyo3(signature = (game, groups, public_intervals, box_intervals, v_ref, eps_safe, weights = None))]
+/// Computes robust safe response envelope.
 fn robust_safe_response_envelope(
     game: &str,
     groups: HashMap<String, Vec<String>>,
@@ -691,6 +726,7 @@ fn robust_safe_response_envelope(
 
 #[pyfunction]
 #[pyo3(signature = (game, groups, public_intervals, box_intervals, v_ref, eps_safe, weights = None))]
+/// Computes robust safe response obs.
 fn robust_safe_response_obs(
     game: &str,
     groups: HashMap<String, Vec<String>>,
@@ -784,6 +820,7 @@ fn robust_safe_response_obs(
 
 #[pyfunction]
 #[pyo3(signature = (game, groups, public_intervals, event_entries, event_h, v_ref, eps_safe, weights = None, row_meta = None))]
+/// Computes robust safe response linear.
 fn robust_safe_response_linear(
     game: &str,
     groups: HashMap<String, Vec<String>>,
@@ -890,6 +927,7 @@ fn robust_safe_response_linear(
 
 #[pyfunction]
 #[pyo3(signature = (game, groups, public_intervals, event_entries, event_h, v_ref, eps_safe, weights = None, row_meta = None, max_iters = 64, tol = 1e-7))]
+/// Computes robust safe response linear cutting plane.
 fn robust_safe_response_linear_cutting_plane(
     game: &str,
     groups: HashMap<String, Vec<String>>,
@@ -951,6 +989,7 @@ fn robust_safe_response_linear_cutting_plane(
 }
 
 #[pyfunction]
+/// Computes probe coefficients.
 fn probe_coefficients(
     game: &str,
     opp_behavior: HashMap<String, Vec<f64>>,
@@ -962,6 +1001,7 @@ fn probe_coefficients(
 
 #[pyfunction]
 #[allow(clippy::too_many_arguments)]
+/// Computes robust safe response probe.
 fn robust_safe_response_probe(
     game: &str,
     intervals: HashMap<String, Vec<(f64, f64)>>,
@@ -985,6 +1025,7 @@ fn robust_safe_response_probe(
 #[pyfunction]
 #[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (game, groups, intervals, y_hat, v_ref, eps_safe, rho, guard_rhs, weights = None))]
+/// Computes confidence guarded point probe.
 fn confidence_guarded_point_probe(
     game: &str,
     groups: HashMap<String, Vec<String>>,
@@ -1007,12 +1048,14 @@ fn confidence_guarded_point_probe(
 }
 
 #[pyfunction]
+/// Compute weights for opponent reach.
 fn opponent_reach_weights(game: &str, x_agent: Vec<f64>) -> PyResult<HashMap<String, f64>> {
     let sf0 = compile(game, 0)?;
     Ok(reach_weights_of(game, &sf0, &x_agent)?)
 }
 
 #[pyfunction]
+/// Computes agent showdown reach.
 fn agent_showdown_reach(
     game: &str,
     x_agent: Vec<f64>,
@@ -1022,6 +1065,7 @@ fn agent_showdown_reach(
 }
 
 #[pyfunction]
+/// Computes confidence sensitivity.
 fn confidence_sensitivity(
     game: &str,
     intervals: HashMap<String, Vec<(f64, f64)>>,
@@ -1047,6 +1091,7 @@ fn confidence_sensitivity(
 }
 
 #[pyfunction]
+/// Simulate trajectories under the configured policies.
 fn simulate(
     game: &str,
     strat0: HashMap<String, Vec<f64>>,
@@ -1079,6 +1124,7 @@ fn simulate(
 }
 
 #[pyfunction]
+/// Simulate showdown.
 fn simulate_showdown(
     game: &str,
     strat0: HashMap<String, Vec<f64>>,
@@ -1133,13 +1179,16 @@ fn simulate_showdown(
 }
 
 #[pyclass(name = "PayoffMatrix")]
+/// Stores state for py payoff matrix.
 struct PyPayoffMatrix {
     inner: payoff::PayoffMatrix,
 }
 
 #[pymethods]
+/// Implements operations for `PyPayoffMatrix`.
 impl PyPayoffMatrix {
     #[new]
+    /// Constructs a new value from the supplied configuration.
     fn new(game: &str) -> PyResult<Self> {
         Ok(Self {
             inner: payoff_of(game)?,
@@ -1147,20 +1196,24 @@ impl PyPayoffMatrix {
     }
 
     #[getter]
+    /// Computes nrows.
     fn nrows(&self) -> usize {
         self.inner.nrows
     }
 
     #[getter]
+    /// Computes ncols.
     fn ncols(&self) -> usize {
         self.inner.ncols
     }
 
     #[getter]
+    /// Computes entries.
     fn entries(&self) -> Vec<(usize, usize, f64)> {
         self.inner.entries.clone()
     }
 
+    /// Computes bilinear.
     fn bilinear(&self, x: Vec<f64>, y: Vec<f64>) -> PyResult<f64> {
         if x.len() != self.inner.nrows || y.len() != self.inner.ncols {
             return Err(PyValueError::new_err(format!(
@@ -1174,6 +1227,7 @@ impl PyPayoffMatrix {
         Ok(self.inner.bilinear(&x, &y))
     }
 
+    /// Computes matvec a y.
     fn matvec_a_y(&self, y: Vec<f64>) -> PyResult<Vec<f64>> {
         if y.len() != self.inner.ncols {
             return Err(PyValueError::new_err(format!(
@@ -1185,6 +1239,7 @@ impl PyPayoffMatrix {
         Ok(self.inner.matvec_a_y(&y))
     }
 
+    /// Computes matvec at x.
     fn matvec_at_x(&self, x: Vec<f64>) -> PyResult<Vec<f64>> {
         if x.len() != self.inner.nrows {
             return Err(PyValueError::new_err(format!(
@@ -1198,13 +1253,16 @@ impl PyPayoffMatrix {
 }
 
 #[pyclass(name = "ConfidenceSet")]
+/// Stores state for py confidence set.
 struct PyConfidenceSet {
     inner: confidence::ConfidenceSet,
 }
 
 #[pymethods]
+/// Implements operations for `PyConfidenceSet`.
 impl PyConfidenceSet {
     #[new]
+    /// Constructs a new value from the supplied configuration.
     fn new(game: &str, intervals: HashMap<String, Vec<(f64, f64)>>) -> PyResult<Self> {
         Ok(Self {
             inner: confidence::build(&compile(game, 1)?, &intervals),
@@ -1213,6 +1271,7 @@ impl PyConfidenceSet {
 
     #[staticmethod]
     #[pyo3(signature = (game, groups, intervals, weights = None))]
+    /// Constructs a value from public.
     fn from_public(
         game: &str,
         groups: HashMap<String, Vec<String>>,
@@ -1230,25 +1289,30 @@ impl PyConfidenceSet {
     }
 
     #[getter]
+    /// Computes nrows.
     fn nrows(&self) -> usize {
         self.inner.nrows
     }
 
     #[getter]
+    /// Computes ncols.
     fn ncols(&self) -> usize {
         self.inner.ncols
     }
 
     #[getter]
+    /// Computes g entries.
     fn g_entries(&self) -> Vec<(usize, usize, f64)> {
         self.inner.g_entries.clone()
     }
 
     #[getter]
+    /// Computes h.
     fn h(&self) -> Vec<f64> {
         self.inner.h.clone()
     }
 
+    /// Computes max violation.
     fn max_violation(&self, y: Vec<f64>) -> PyResult<f64> {
         if y.len() != self.inner.ncols {
             return Err(PyValueError::new_err(format!(
@@ -1262,6 +1326,7 @@ impl PyConfidenceSet {
 }
 
 #[pymodule]
+/// Computes safe observation native.
 fn safe_observation_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add(
         "__doc__",

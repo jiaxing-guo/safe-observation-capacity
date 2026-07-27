@@ -1,4 +1,4 @@
-""
+"""Run the river deployment experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -17,6 +17,7 @@ OUT = Path(
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     suite = holdem_structured_opponent_suite("holdem")
     res = run_showdown_comparison(
         suite,

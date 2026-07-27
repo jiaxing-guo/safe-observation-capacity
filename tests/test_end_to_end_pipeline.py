@@ -1,4 +1,4 @@
-""
+"""Regression tests for test end to end pipeline. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -34,7 +34,7 @@ _OPPONENTS = {
 
 
 def _intervals_from_opponent(opp, n=500, delta=0.05, method="hoeffding"):
-    ""
+    """Construct the intervals from opponent policy."""
     interval = (
         hoeffding_interval if method == "hoeffding" else empirical_bernstein_interval
     )
@@ -48,7 +48,7 @@ def _intervals_from_opponent(opp, n=500, delta=0.05, method="hoeffding"):
 
 @pytest.mark.parametrize("player", [0, 1])
 def test_sequence_constraints_root(player):
-
+    """Verify that sequence constraints root."""
     sf = compile_kuhn(player)
     assert sf.sequences[0] == ""
     assert sf.e[0] == 1.0
@@ -59,7 +59,7 @@ def test_sequence_constraints_root(player):
 
 @pytest.mark.parametrize("player", [0, 1])
 def test_child_sum_equals_parent(player):
-
+    """Verify that child sum equals parent."""
     sf = compile_kuhn(player)
     behavior = {info.label: [0.3, 0.7] for info in sf.info_sets}
     x = sf.realization_from_behavior(behavior)
@@ -69,7 +69,7 @@ def test_child_sum_equals_parent(player):
 
 
 def test_terminal_payoff_matrix_entries():
-
+    """Verify that terminal payoff matrix entries."""
     a = build_kuhn_payoff()
     sf0, sf1 = compile_kuhn(0), compile_kuhn(1)
     dense = a.dense()
@@ -82,6 +82,7 @@ def test_terminal_payoff_matrix_entries():
 
 
 def test_blueprint_value_matches_known_kuhn_value():
+    """Verify that blueprint value matches known Kuhn value."""
     bp = solve_blueprint("kuhn", method="lp")
     assert bp.value == pytest.approx(KNOWN_KUHN_VALUE, abs=1e-9)
     assert compile_kuhn(0).constraint_residual(bp.realization) < 1e-9
@@ -91,7 +92,7 @@ def test_blueprint_value_matches_known_kuhn_value():
 
 @pytest.mark.parametrize("name", sorted(_OPPONENTS))
 def test_robust_lp_returns_safe_strategy(name):
-
+    """Verify that robust linear program returns safe strategy."""
     bp = solve_blueprint("kuhn", method="lp")
     opp = _OPPONENTS[name]()
     intervals = _intervals_from_opponent(opp)
@@ -102,7 +103,7 @@ def test_robust_lp_returns_safe_strategy(name):
 
 
 def test_low_reach_leak_probe_improves_identification():
-    ""
+    """Verify that low reach leak probe improves identification."""
     from safe_observation.experiments.online import run_probing_comparison
     from safe_observation.opponents import leduc_low_reach_leak_opponent
 
@@ -127,7 +128,7 @@ def test_low_reach_leak_probe_improves_identification():
 
 @pytest.mark.parametrize("player", [0, 1])
 def test_behavior_realization_roundtrip(player):
-
+    """Verify that behavior realization roundtrip."""
     sf = compile_kuhn(player)
     behavior = {info.label: [0.25, 0.75] for info in sf.info_sets}
     recovered = sf.behavior_from_realization(sf.realization_from_behavior(behavior))
@@ -138,7 +139,7 @@ def test_behavior_realization_roundtrip(player):
 @pytest.mark.parametrize("name", sorted(_OPPONENTS))
 @pytest.mark.parametrize("method", ["hoeffding", "empirical_bernstein"])
 def test_confidence_covers_and_robust_is_safe_for_suite(name, method):
-
+    """Verify that confidence covers and robust is safe for suite."""
     bp = solve_blueprint("kuhn", method="lp")
     opp = _OPPONENTS[name]()
     y_star = opp.realization()
@@ -153,7 +154,7 @@ def test_confidence_covers_and_robust_is_safe_for_suite(name, method):
 
 
 def test_end_to_end_pipeline_audit():
-    ""
+    """Verify that end to end pipeline audit."""
     sf0, sf1 = compile_kuhn(0), compile_kuhn(1)
     payoff = build_kuhn_payoff()
 

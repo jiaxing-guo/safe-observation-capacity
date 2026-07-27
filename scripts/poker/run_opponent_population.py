@@ -1,4 +1,4 @@
-""
+"""Run the opponent population experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -43,17 +43,21 @@ OPP_TIMEOUT = int(os.environ.get("RPOP_OPP_TIMEOUT", "0"))
 
 
 class _OpponentTimeout(Exception):
-    ""
+    """Represent opponent timeout for the run opponent population workflow."""
 
 
 def _alarm(seconds: int):
-    ""
+    """Compute alarm for the run opponent population workflow."""
 
     class _Guard:
+        """Represent guard for the run opponent population workflow."""
+
         def __enter__(self):
+            """Enter the managed execution context."""
             if seconds > 0 and hasattr(signal, "SIGALRM"):
 
                 def _handler(signum, frame):
+                    """Translate a termination signal into orderly worker shutdown."""
                     raise _OpponentTimeout
 
                 self._prev = signal.signal(signal.SIGALRM, _handler)
@@ -61,6 +65,7 @@ def _alarm(seconds: int):
             return self
 
         def __exit__(self, *exc):
+            """Leave the managed execution context."""
             if seconds > 0 and hasattr(signal, "SIGALRM"):
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, self._prev)
@@ -70,6 +75,7 @@ def _alarm(seconds: int):
 
 
 def _out_path(shard: int | None = None) -> Path:
+    """Compute out path for the run opponent population workflow."""
     base = os.environ.get("RPOP_OUT")
     if base:
         return Path(base)
@@ -80,13 +86,14 @@ def _out_path(shard: int | None = None) -> Path:
 def _random_opponent(
     rng: random.Random, eq: dict[str, list[float]], actions: dict[str, list[str]]
 ) -> tuple[dict[str, list[float]], dict[str, Any]]:
-    ""
+    """Construct the random opponent policy."""
     line = rng.choice(["turn", "river", "any"])
     target = rng.choice(["f", "f", "c"])
     strength = rng.choice(["all", "strong", "weak"])
     mag = rng.uniform(0.05, MAX_MAG)
 
     def pick(hole: str, hist: str, acts: list[str]) -> bool:
+        """Compute pick for the run opponent population workflow."""
         is_river = "/" in hist
         if line == "turn" and is_river:
             return False
@@ -105,11 +112,12 @@ def _random_opponent(
 
 
 def _shard_indices(n: int, n_shards: int, shard_idx: int) -> list[int]:
-    ""
+    """Compute shard indices for the run opponent population workflow."""
     return [i for i in range(n) if i % n_shards == shard_idx]
 
 
 def _merge() -> None:
+    """Merge the supplied records into this aggregate."""
     shards = sorted(Path("results").glob(f"opponent_population_{GAME}_shard*.json"))
     if not shards:
         raise SystemExit(f"no shard files for game={GAME} to merge")
@@ -145,6 +153,7 @@ def _merge() -> None:
 
 
 def _summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize the supplied experiment records."""
     if not rows:
         return {
             "n": 0,
@@ -176,6 +185,7 @@ def _summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _print_summary(summary: dict[str, Any]) -> None:
+    """Compute print summary for the run opponent population workflow."""
     print(
         f"\n  population n={summary['n']}  "
         f"pearson(D_e,Delta)={summary['pearson_De_Delta']:+.3f}  "
@@ -199,6 +209,7 @@ def _print_summary(summary: dict[str, Any]) -> None:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     if MERGE:
         _merge()
         return
@@ -235,6 +246,7 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
 
     def _write_shard(final: bool) -> None:
+        """Write shard for the run opponent population workflow."""
         payload: dict[str, Any] = {
             "game": game,
             "rho": RHO,

@@ -1,4 +1,4 @@
-""
+"""Regression tests for test low reach leak. See the corresponding implementation module and supplementary Reproducibility."""
 
 from statistics import mean
 
@@ -20,7 +20,7 @@ LEDUC_VALUE = -0.08560642
 
 
 def test_cap_facing_sets_have_fold_call_actions():
-
+    """Verify that cap facing sets have fold call actions."""
     actions = {
         info.label: tuple(a for a, _ in info.children)
         for info in compile_leduc(1).info_sets
@@ -31,6 +31,7 @@ def test_cap_facing_sets_have_fold_call_actions():
 
 
 def test_leak_only_perturbs_cap_facing_sets():
+    """Verify that leak only perturbs cap facing sets."""
     eq = leduc_equilibrium_opponent().behavior
     opp = leduc_low_reach_leak_opponent(0.9)
     cap = set(_leduc_cap_facing_labels())
@@ -46,6 +47,7 @@ def test_leak_only_perturbs_cap_facing_sets():
 
 
 def test_low_reach_leak_is_well_formed_and_realizable():
+    """Verify that low reach leak is well formed and realizable."""
     opp = leduc_low_reach_leak_opponent()
     assert opp.game == "leduc"
     sf1 = compile_leduc(1)
@@ -53,17 +55,19 @@ def test_low_reach_leak_is_well_formed_and_realizable():
 
 
 def test_leak_validates_input():
+    """Verify that leak validates input."""
     with pytest.raises(ValueError):
         leduc_low_reach_leak_opponent(leak=1.5)
 
 
 def test_leak_is_highly_exploitable_by_best_response():
-
+    """Verify that leak is highly exploitable by best response."""
     expl = best_response_value(leduc_low_reach_leak_opponent(0.9))
     assert expl > LEDUC_VALUE + 1.0
 
 
 def test_passive_adaptation_fails_on_low_reach_leak():
+    """Verify that passive adaptation fails on low reach leak."""
     opp = leduc_low_reach_leak_opponent(0.9)
     cap = set(_leduc_cap_facing_labels())
     payoff = build_payoff("leduc")

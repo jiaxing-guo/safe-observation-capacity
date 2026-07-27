@@ -1,4 +1,4 @@
-""
+"""Run the public coverage experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import math
@@ -21,16 +21,19 @@ SEEDS = tuple(range(42, 67))
 
 
 def _build_set(game, groups, intervals, weights):
+    """Build set for the run public coverage workflow."""
     grp = {k: list(v) for k, v in groups.items()}
     payload = {k: [tuple(b) for b in bd] for k, bd in intervals.items()}
     return native.ConfidenceSet.from_public(game, grp, payload, weights)
 
 
 def _inside(cset, y_star) -> bool:
+    """Return whether the estimate lies inside the supplied interval."""
     return cset.nrows == 0 or cset.max_violation(y_star) <= 1e-9
 
 
 def run_opponent(game: str, opp, weights) -> dict:
+    """Construct the run opponent policy."""
     y_star = list(opp.realization())
     blueprint_behavior = compile_game(game, 0).behavior_from_realization(
         native.blueprint_realization(game, 0)
@@ -89,6 +92,7 @@ def run_opponent(game: str, opp, weights) -> dict:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = "holdem"
     suite = holdem_showdown_opponent_suite(game=game)
     by_name = {o.name: o for o in suite.values()}

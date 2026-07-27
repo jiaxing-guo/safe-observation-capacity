@@ -1,4 +1,4 @@
-""
+"""Online primitives for safe-observation experiments. See Safe Active De-censoring, Experiments, and supplementary Game Instances and Experimental Setup."""
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -60,7 +60,7 @@ def run_online_adaptation(
     seed: int = 2026,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the online adaptation experiment."""
     game = opponent.game
     timer = StageTimer()
     budget = ProbeBudget(total=probe_budget_total, per_round=probe_per_round)
@@ -89,6 +89,8 @@ def run_online_adaptation(
 
     rounds_log: list[dict[str, Any]] = []
     min_safety = float("inf")
+    # Selection precedes observation in every round, preventing the current
+    # batch from leaking into the policy used to collect it.
     for t in range(rounds):
         decision = agent.select()
         actual_value = payoff.bilinear(decision.realization, y_star)
@@ -131,6 +133,7 @@ def run_online_adaptation(
             }
         )
 
+    # Report steady-state performance on the latter half of the trajectory.
     tail = rounds_log[max(0, len(rounds_log) // 2) :]
     final_actual = sum(r["actual_value"] for r in tail) / len(tail)
     final_scbr_gap = sum(r["scbr_gap"] for r in tail) / len(tail)
@@ -183,7 +186,7 @@ def run_suite(
     out_dir: str | Path | None = "results",
     **kwargs: Any,
 ) -> dict[str, dict[str, Any]]:
-    ""
+    """Run the suite experiment for the online workflow."""
     return {
         name: run_online_adaptation(
             opponent,
@@ -218,7 +221,7 @@ _SERIES_KEYS = (
 def _aggregate_rounds(
     per_seed_logs: list[list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
-    ""
+    """Aggregate rounds for the online workflow."""
     n_rounds = min(len(log) for log in per_seed_logs)
     labels = list(per_seed_logs[0][0]["ci_width_by_infoset"])
     aggregated: list[dict[str, Any]] = []
@@ -247,7 +250,7 @@ def run_online_adaptation_replicated(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the online adaptation replicated experiment."""
     per_seed = [
         run_online_adaptation(
             opponent,
@@ -312,7 +315,7 @@ def run_online_adaptation_replicated(
 def _target_ci_series(
     rounds_log: list[dict[str, Any]], target_labels: Sequence[str]
 ) -> list[float]:
-    ""
+    """Compute target confidence interval series."""
     targets = [label for label in target_labels]
     series = []
     for row in rounds_log:
@@ -323,7 +326,7 @@ def _target_ci_series(
 
 
 def _mean_std_series(per_seed: list[list[float]]) -> list[dict[str, float]]:
-    ""
+    """Compute mean std series for the online workflow."""
     n = min(len(s) for s in per_seed)
     out = []
     for t in range(n):
@@ -344,7 +347,7 @@ def run_probing_comparison(
     target_labels: Sequence[str] | None = None,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the probing comparison experiment."""
     game = opponent.game
     if arms is None:
         arms = {
@@ -456,7 +459,7 @@ def run_budget_frontier(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the budget frontier experiment."""
     game = opponent.game
     cells: list[dict[str, Any]] = []
     scbr_value = 0.0
@@ -540,7 +543,7 @@ def run_importance_comparison(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the importance comparison experiment."""
     game = opponent.game
     cells: list[dict[str, Any]] = []
     scbr_value = 0.0
@@ -634,7 +637,7 @@ def run_probing_suite(
     opponents: Mapping[str, Opponent] | None = None,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the probing suite experiment."""
     from ..opponents import leduc_opponent_suite
 
     suite = dict(opponents) if opponents is not None else leduc_opponent_suite()
@@ -714,6 +717,7 @@ _COVERAGE_ARMS = ("no_union", "spatial", "time_uniform")
 def _build_intervals_for_arm(
     store: OpponentEvidenceStore, arm: str, delta: float, method: str, round_index: int
 ):
+    """Build intervals for arm for the online workflow."""
     if arm == "no_union":
         return store.intervals(delta, method=method, union_bound=False)
     if arm == "spatial":
@@ -734,7 +738,7 @@ def run_coverage_experiment(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the coverage experiment experiment."""
     game = opponent.game
     y_star = list(opponent.realization())
     blueprint_behavior = compile_game(game, 0).behavior_from_realization(
@@ -812,7 +816,7 @@ def run_finite_sample_gap(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the finite sample gap experiment."""
     rep = run_online_adaptation_replicated(
         opponent,
         rounds=rounds,
@@ -869,7 +873,7 @@ def run_finite_sample_gap(
 
 
 def _empirical_realization(evidence: OpponentEvidenceStore, sf1) -> list[float]:
-    ""
+    """Compute empirical realization for the online workflow."""
     return list(
         sf1.realization_from_behavior(
             {label: list(evidence.p_hat(label)) for label in evidence.labels}
@@ -878,19 +882,21 @@ def _empirical_realization(evidence: OpponentEvidenceStore, sf1) -> list[float]:
 
 
 class _Method:
-    ""
+    """Represent method for the online workflow."""
 
     name = "method"
     guarantee = "none"
     adaptive = True
 
     def select(self, t: int, evidence: OpponentEvidenceStore) -> list[float]:
+        """Select the next floor-safe response."""
         raise NotImplementedError
 
     def observe(self, realized_value: float, v_ref: float) -> None:
-        ""
+        """Update state from newly observed opponent actions."""
 
     def extra(self) -> dict[str, Any]:
+        """Return auxiliary diagnostics for the current policy."""
         return {}
 
 
@@ -914,37 +920,50 @@ def _baseline_methods(
     micro_probe_budget: float = 0.0,
     micro_probe_threshold: float = 0.5,
 ) -> list[tuple[str, str, Any]]:
-    ""
+    """Compute baseline methods for the online workflow."""
 
     class Blueprint(_Method):
+        """Represent blueprint for the online workflow."""
+
         name = "blueprint"
         guarantee = "hard_safe"
         adaptive = False
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             return list(x_blueprint)
 
     class EmpiricalBR(_Method):
+        """Represent empirical br for the online workflow."""
+
         name = "empirical_br"
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             y_hat = _empirical_realization(evidence, sf1)
             return list(best_response(y_hat, game=game).realization)
 
     class RNR(_Method):
+        """Represent restricted Nash response for the online workflow."""
+
         def __init__(self, p):
+            """Initialize the restricted Nash response."""
             self.p = p
             self.name = f"rnr_p{p:g}"
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             y_hat = _empirical_realization(evidence, sf1)
             return list(restricted_nash_response(y_hat, self.p, game=game).realization)
 
     class Passive(_Method):
+        """Represent passive for the online workflow."""
+
         name = "passive"
         guarantee = "hard_safe"
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             intervals = evidence.intervals(delta, method=method)
             return list(
                 robust_safe_response(
@@ -953,15 +972,19 @@ def _baseline_methods(
             )
 
     class ProbeBudgeted(_Method):
+        """Represent probe budgeted for the online workflow."""
+
         name = "probe_budgeted"
         guarantee = "certified_budget"
 
         def __init__(self):
+            """Initialize the probe budgeted for the online workflow."""
             self.budget = ProbeBudget(
                 total=probe_per_round * rounds, per_round=probe_per_round
             )
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             intervals = evidence.intervals(delta, method=method)
             opp_behavior = {
                 label: list(evidence.p_hat(label)) for label in evidence.labels
@@ -984,13 +1007,17 @@ def _baseline_methods(
             return list(x)
 
         def extra(self):
+            """Return auxiliary diagnostics for the current policy."""
             return {"budget_spent": self.budget.spent}
 
     class SafetyFilteredRNR(_Method):
+        """Represent safety filtered restricted Nash response."""
+
         name = "safety_filtered_rnr"
         guarantee = "certified_budget"
 
         def __init__(self):
+            """Initialize the safety filtered restricted Nash response."""
             self.budget = ProbeBudget(
                 total=probe_per_round * rounds, per_round=probe_per_round
             )
@@ -998,6 +1025,7 @@ def _baseline_methods(
             self._rounds = 0
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             y_hat = _empirical_realization(evidence, sf1)
             rho = self.budget.allowance()
             resp = safety_filtered_restricted_nash_response(
@@ -1009,21 +1037,26 @@ def _baseline_methods(
             return list(resp.realization)
 
         def extra(self):
+            """Return auxiliary diagnostics for the current policy."""
             return {
                 "budget_spent": self.budget.spent,
                 "mean_p_star": self._p_sum / max(1, self._rounds),
             }
 
     class BudgetedEmpiricalBR(_Method):
+        """Represent budgeted empirical br for the online workflow."""
+
         name = "budgeted_empirical_br"
         guarantee = "certified_budget"
 
         def __init__(self):
+            """Initialize the budgeted empirical br."""
             self.budget = ProbeBudget(
                 total=probe_per_round * rounds, per_round=probe_per_round
             )
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             rho = self.budget.allowance()
             opp_behavior = {
                 label: list(evidence.p_hat(label)) for label in evidence.labels
@@ -1037,13 +1070,17 @@ def _baseline_methods(
             return list(x)
 
         def extra(self):
+            """Return auxiliary diagnostics for the current policy."""
             return {"budget_spent": self.budget.spent}
 
     class ValueAwareBR(_Method):
+        """Represent value aware br for the online workflow."""
+
         name = "value_aware_br"
         guarantee = "certified_budget"
 
         def __init__(self):
+            """Initialize the value aware br."""
             self.budget = ProbeBudget(
                 total=probe_per_round * rounds, per_round=probe_per_round
             )
@@ -1052,6 +1089,7 @@ def _baseline_methods(
             self._rounds = 0
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             intervals = evidence.intervals(delta, method=method)
             shadow = floor_shadow_price(
                 intervals, v_ref=v_ref, eps_safe=eps_safe, game=game
@@ -1074,6 +1112,7 @@ def _baseline_methods(
             return list(x)
 
         def extra(self):
+            """Return auxiliary diagnostics for the current policy."""
             return {
                 "budget_spent": self.budget.spent,
                 "gate_rate": self._gate_sum / max(1, self._rounds),
@@ -1081,10 +1120,13 @@ def _baseline_methods(
             }
 
     class PointResponse(_Method):
+        """Represent point response for the online workflow."""
+
         name = "point_response"
         guarantee = "certified_budget"
 
         def __init__(self):
+            """Initialize the point response for the online workflow."""
             self.budget = SafetyBudgetLedger(
                 rho_cap=probe_per_round,
                 hard_total=probe_per_round * rounds,
@@ -1101,6 +1143,7 @@ def _baseline_methods(
             self._rounds = 0
 
         def select(self, t, evidence):
+            """Select the next floor-safe response."""
             intervals = evidence.intervals(delta, method=method)
             shadow = floor_shadow_price(
                 intervals, v_ref=v_ref, eps_safe=eps_safe, game=game
@@ -1135,11 +1178,12 @@ def _baseline_methods(
             return list(x)
 
         def observe(self, realized_value, v_ref):
-
+            """Update state from newly observed opponent actions."""
             self.budget.settle(self._pending_spend, realized_value - v_ref)
             self._pending_spend = 0.0
 
         def extra(self):
+            """Return auxiliary diagnostics for the current policy."""
             return {
                 "budget_spent": self.budget.spent,
                 "safety_debt_final": self.budget.debt,
@@ -1149,15 +1193,18 @@ def _baseline_methods(
             }
 
     class GiftBased(_Method):
+        """Represent gift based for the online workflow."""
+
         name = "gift_based"
         guarantee = "gift_funded"
 
         def __init__(self):
+            """Initialize the gift based for the online workflow."""
             self.bankroll = 0.0
             self.min_bankroll = 0.0
 
         def select(self, t, evidence):
-
+            """Select the next floor-safe response."""
             if self.bankroll <= 1e-12:
                 return list(x_blueprint)
             y_hat = _empirical_realization(evidence, sf1)
@@ -1169,10 +1216,12 @@ def _baseline_methods(
             return list(x)
 
         def observe(self, realized_value, v_ref):
+            """Update state from newly observed opponent actions."""
             self.bankroll += realized_value - v_ref
             self.min_bankroll = min(self.min_bankroll, self.bankroll)
 
         def extra(self):
+            """Return auxiliary diagnostics for the current policy."""
             return {
                 "gift_bankroll_final": self.bankroll,
                 "gift_min_bankroll": self.min_bankroll,
@@ -1204,7 +1253,7 @@ def _run_method_against(
     scbr_value: float,
     seed: int,
 ) -> dict[str, Any]:
-    ""
+    """Run the method against experiment."""
     game = opponent.game
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
@@ -1244,7 +1293,7 @@ def _run_method_against(
 
 @dataclass(frozen=True)
 class _ComparisonCell:
-    ""
+    """Represent comparison cell for the online workflow."""
 
     opp_key: str
     opponent: Opponent
@@ -1267,7 +1316,7 @@ class _ComparisonCell:
 def _run_comparison_cell(
     cell: _ComparisonCell,
 ) -> tuple[str, str, int, dict[str, Any]]:
-    ""
+    """Run the comparison cell experiment."""
     sf0 = compile_game(cell.game, 0)
     sf1 = compile_game(cell.game, 1)
     lineup = _baseline_methods(
@@ -1298,7 +1347,7 @@ def _run_comparison_cell(
 
 
 def _parallel_map(fn, args, workers: int | None):
-    ""
+    """Compute parallel map for the online workflow."""
     args = list(args)
     if workers is None or workers <= 1 or len(args) <= 1:
         return [fn(a) for a in args]
@@ -1329,7 +1378,7 @@ def run_baseline_comparison(
     out_dir: str | Path | None = "results",
     workers: int | None = None,
 ) -> dict[str, Any]:
-    ""
+    """Run the baseline comparison experiment."""
     suite = dict(opponents) if opponents is not None else leduc_opponent_suite()
     game = next(iter(suite.values())).game
     blueprint = solve_blueprint(game, method="lp")
@@ -1511,7 +1560,7 @@ _T_CRIT_975: dict[int, float] = {
 
 
 def _ci95_halfwidth(values: Sequence[float]) -> float:
-    ""
+    """Compute ci95 halfwidth for the online workflow."""
     n = len(values)
     if n <= 1:
         return 0.0
@@ -1528,7 +1577,7 @@ def _public_floor_shadow(
     delta_rho: float = 0.05,
     weights: Mapping[str, float] | None = None,
 ) -> float:
-    ""
+    """Compute public floor shadow for the online workflow."""
     j0 = robust_safe_response_public(
         groups, intervals, v_ref=v_ref, eps_safe=eps_safe, game=game, weights=weights
     ).robust_value
@@ -1545,7 +1594,7 @@ def _public_floor_shadow(
 
 @cache
 def _p2_fold_indices(game: str) -> tuple[tuple[str, int], ...]:
-    ""
+    """Compute player-two fold indices for the online workflow."""
     sf1 = compile_game(game, 1)
     out: list[tuple[str, int]] = []
     for info in sf1.info_sets:
@@ -1557,7 +1606,7 @@ def _p2_fold_indices(game: str) -> tuple[tuple[str, int], ...]:
 
 
 def _game_equilibrium_opponent(game: str) -> Opponent:
-    ""
+    """Construct the game equilibrium opponent policy."""
     if game == "holdem" or game.startswith("holdem_"):
         return holdem_equilibrium_opponent(game)
     if game == "leduc":
@@ -1571,7 +1620,7 @@ def _game_equilibrium_opponent(game: str) -> Opponent:
 def _cf_fold_data(
     game: str,
 ) -> tuple[tuple[float, ...], tuple[tuple[str, tuple[tuple[str, int, int], ...]], ...]]:
-    ""
+    """Compute cf fold data for the online workflow."""
     sf1 = compile_game(game, 1)
     y_eq = tuple(_game_equilibrium_opponent(game).realization())
     fold_idx = dict(_p2_fold_indices(game))
@@ -1591,7 +1640,7 @@ def _cf_fold_data(
 def _counterfactual_fold_reference(
     game: str, weights: Mapping[str, float]
 ) -> dict[str, float]:
-    ""
+    """Compute counterfactual fold reference for the online workflow."""
     y_eq, groups = _cf_fold_data(game)
     ref: dict[str, float] = {}
     for key, members in groups:
@@ -1606,7 +1655,7 @@ def _adaptive_fold_gate(
     ev_public: OpponentEvidenceStore,
     ref_fold: Mapping[str, float],
 ) -> float:
-    ""
+    """Compute adaptive fold gate for the online workflow."""
     counts = ev_public._public_counts()
     groups = ev_public.public_groups()
     fold_idx = dict(_p2_fold_indices(game))
@@ -1631,7 +1680,7 @@ def _adaptive_fold_gate(
 def _public_point_behavior(
     ev_public: OpponentEvidenceStore,
 ) -> dict[str, list[float]]:
-    ""
+    """Compute public point behavior for the online workflow."""
     counts = ev_public._public_counts()
     groups = ev_public.public_groups()
     behavior: dict[str, list[float]] = {}
@@ -1654,7 +1703,7 @@ def _censored_em_behavior(
     pub_weights: Mapping[str, float] | None,
     iters: int = 20,
 ) -> dict[str, list[float]]:
-    ""
+    """Compute censored em behavior for the online workflow."""
     weights = pub_weights or {}
     fold_idx = dict(_p2_fold_indices(game))
     groups = ev_public.public_groups()
@@ -1734,7 +1783,7 @@ def _showdown_plan(
     route_counter: dict[str, int] | None = None,
     latch_threshold: float | None = None,
 ) -> tuple[list[float], float, float]:
-    ""
+    """Compute showdown plan for the online workflow."""
     if method_name == "blueprint":
         return list(x_blueprint), 0.0, 0.0
     groups = ev_public.public_groups()
@@ -1880,7 +1929,7 @@ def _run_showdown_method(
     seed: int,
     latch_threshold: float | None = None,
 ) -> dict[str, Any]:
-    ""
+    """Run the showdown method experiment."""
     game = opponent.game
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
@@ -1986,7 +2035,7 @@ def _run_showdown_method(
 
 @dataclass(frozen=True)
 class _ShowdownCell:
-    ""
+    """Represent showdown cell for the online workflow."""
 
     opp_key: str
     opponent: Opponent
@@ -2010,7 +2059,7 @@ class _ShowdownCell:
 def _run_showdown_cell(
     cell: _ShowdownCell,
 ) -> tuple[str, str, int, dict[str, Any]]:
-    ""
+    """Run the showdown cell experiment."""
     _t0 = perf_counter()
     result = _run_showdown_method(
         cell.method_name,
@@ -2050,7 +2099,7 @@ def run_showdown_comparison(
     workers: int | None = None,
     latch_threshold: float | None = None,
 ) -> dict[str, Any]:
-    ""
+    """Run the showdown comparison experiment."""
     suite = dict(opponents) if opponents is not None else leduc_opponent_suite()
     game = next(iter(suite.values())).game
     blueprint = solve_blueprint(game, method="lp")
@@ -2193,7 +2242,7 @@ def _run_method_vs_adversary(
     v_ref: float,
     seed: int,
 ) -> dict[str, Any]:
-    ""
+    """Run the method vs adversary experiment."""
     sf0 = compile_game(game, 0)
     sf1 = compile_game(game, 1)
     evidence = OpponentEvidenceStore.for_game(game)
@@ -2234,7 +2283,7 @@ def run_adversarial_stress(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the adversarial stress experiment."""
     blueprint = solve_blueprint(game, method="lp")
     v_ref = blueprint.value
     assert blueprint.realization is not None
@@ -2307,7 +2356,7 @@ def run_adversarial_stress(
 
 
 def _strike_behavior(x: Sequence[float], sf1, game: str) -> dict[str, list[float]]:
-    ""
+    """Compute strike behavior for the online workflow."""
     best_response_realization = safety_verifier(x, game=game).best_response
     return sf1.behavior_from_realization(best_response_realization)
 
@@ -2315,10 +2364,11 @@ def _strike_behavior(x: Sequence[float], sf1, game: str) -> dict[str, list[float
 def _lure_then_strike_schedule(
     lure_behavior: Mapping[str, Sequence[float]], strike_round: int, sf1, game: str
 ):
-    ""
+    """Compute lure then strike schedule."""
     lure = {label: list(dist) for label, dist in lure_behavior.items()}
 
     def schedule(t: int, x: Sequence[float], rounds: int) -> dict[str, list[float]]:
+        """Construct the round-by-round probing schedule."""
         if t < strike_round:
             return lure
         return _strike_behavior(x, sf1, game)
@@ -2329,10 +2379,11 @@ def _lure_then_strike_schedule(
 def _drift_schedule(
     lure_behavior: Mapping[str, Sequence[float]], sf1, game: str, power: float = 1.0
 ):
-    ""
+    """Compute drift schedule for the online workflow."""
     lure = {label: list(dist) for label, dist in lure_behavior.items()}
 
     def schedule(t: int, x: Sequence[float], rounds: int) -> dict[str, list[float]]:
+        """Construct the round-by-round probing schedule."""
         w = (t / (rounds - 1)) ** power if rounds > 1 else 1.0
         strike = _strike_behavior(x, sf1, game)
         return {
@@ -2355,7 +2406,7 @@ def _run_method_vs_schedule(
     v_ref: float,
     seed: int,
 ) -> dict[str, Any]:
-    ""
+    """Run the method vs schedule experiment."""
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
     sf1 = compile_game(game, 1)
@@ -2409,7 +2460,7 @@ def run_nonstationary_stress(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, Any]:
-    ""
+    """Run the nonstationary stress experiment."""
     if strike_round is None:
         strike_round = rounds // 2
     blueprint = solve_blueprint(game, method="lp")
@@ -2520,7 +2571,7 @@ def _run_showdown_method_vs_schedule(
     seed: int,
     latch_threshold: float | None,
 ) -> dict[str, Any]:
-    ""
+    """Run the showdown method vs schedule experiment."""
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
     sf1 = compile_game(game, 1)
@@ -2601,7 +2652,7 @@ def _run_showdown_method_vs_schedule(
 
 @dataclass(frozen=True)
 class _ShowdownScheduleCell:
-    ""
+    """Represent showdown schedule cell for the online workflow."""
 
     method_name: str
     seed: int
@@ -2628,17 +2679,19 @@ class _ShowdownScheduleCell:
 def _run_showdown_schedule_cell(
     cell: _ShowdownScheduleCell,
 ) -> tuple[str, int, dict[str, Any]]:
-    ""
+    """Run the showdown schedule cell experiment."""
     lure_b = {k: list(v) for k, v in cell.lure_behavior.items()}
     strike_b = {k: list(v) for k, v in cell.strike_behavior.items()}
     if cell.kind == "lure_then_strike":
 
         def schedule(t, x, n):
+            """Construct the round-by-round probing schedule."""
             return lure_b if t < cell.strike_round else strike_b
 
     elif cell.kind == "drift":
 
         def schedule(t, x, n):
+            """Construct the round-by-round probing schedule."""
             w = (t / (n - 1)) ** cell.drift_power if n > 1 else 1.0
             return {
                 lab: [
@@ -2697,7 +2750,7 @@ def run_showdown_nonstationary(
     out_dir: str | Path | None = "results",
     workers: int | None = None,
 ) -> dict[str, Any]:
-    ""
+    """Run the showdown nonstationary experiment."""
     if strike_round is None:
         strike_round = rounds // 2
     blueprint = solve_blueprint(game, method="lp")
@@ -2815,7 +2868,7 @@ def run_showdown_population(
     out_dir: str | Path | None = "results",
     workers: int | None = None,
 ) -> dict[str, Any]:
-    ""
+    """Run the showdown population experiment."""
     from ..opponents import holdem_population_sample
 
     suite = holdem_population_sample(
@@ -2894,7 +2947,7 @@ def run_ablation(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     out_dir: str | Path | None = "results",
 ) -> dict[str, list[dict[str, Any]]]:
-    ""
+    """Run the ablation experiment for the online workflow."""
     base = dict(
         rounds=rounds,
         episodes_per_round=episodes_per_round,
@@ -2903,6 +2956,7 @@ def run_ablation(
     )
 
     def cell(**override: Any) -> dict[str, Any]:
+        """Run one independently reproducible experiment cell."""
         params = {"delta": 0.05, "eps_safe": 0.0, "method": "hoeffding", **override}
         r = run_online_adaptation_replicated(opponent, **base, **params)
         return {

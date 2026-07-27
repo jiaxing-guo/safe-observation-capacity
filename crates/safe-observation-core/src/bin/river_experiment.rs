@@ -1,3 +1,6 @@
+//! Command-line experiment for river experiment. See Experiments and supplementary Certification at the Unbucketed River.
+
+/// Runs the command-line entry point.
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     std::env::set_var("SAFE_OBSERVATION_HIGHS_THREADS", "1");

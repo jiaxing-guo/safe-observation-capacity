@@ -1,4 +1,4 @@
-""
+"""Validate capacity tradeoff. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ RHO_GRID = [0.0, 0.01, 0.02, 0.04, 0.08, 0.12, 0.2, 0.3, 0.45, 0.6, 0.8, 1.0]
 
 
 def _targets(sf1):
-    ""
+    """Compute targets for the validate capacity tradeoff workflow."""
     out = []
     for info in sf1.info_sets:
         acts = [a for a, _ in info.children]
@@ -29,7 +29,7 @@ def _targets(sf1):
 
 
 def _kappa(sf1, target, rho, v_ref):
-    ""
+    """Solve safe observation capacity at the supplied safety budget."""
     triv_iv = {i.label: [(0.0, 1.0)] * len(i.children) for i in sf1.info_sets}
     cont_beh = {}
     for info in sf1.info_sets:
@@ -58,6 +58,7 @@ def _kappa(sf1, target, rho, v_ref):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     sf1 = compile_game(GAME, 1)
     bp = solve_blueprint(GAME, method="lp")
     v_ref = bp.value

@@ -1,3 +1,6 @@
+//! CFR algorithms for safe observation. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River.
+
+/// Computes regret matching.
 pub fn regret_matching(regret_sum: &[f64]) -> Vec<f64> {
     let positive: Vec<f64> = regret_sum.iter().map(|&r| r.max(0.0)).collect();
     let total: f64 = positive.iter().sum();
@@ -9,6 +12,7 @@ pub fn regret_matching(regret_sum: &[f64]) -> Vec<f64> {
     }
 }
 
+/// Normalize weights into a probability distribution.
 pub fn normalize(weights: &[f64]) -> Vec<f64> {
     let total: f64 = weights.iter().sum();
     if total > 0.0 {
@@ -20,10 +24,12 @@ pub fn normalize(weights: &[f64]) -> Vec<f64> {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
 
     #[test]
+    /// Verifies that uniform when no positive regret.
     fn uniform_when_no_positive_regret() {
         let s = regret_matching(&[0.0, -1.0]);
         assert!((s[0] - 0.5).abs() < 1e-12);
@@ -31,6 +37,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that proportional to positive regret.
     fn proportional_to_positive_regret() {
         let s = regret_matching(&[3.0, 1.0]);
         assert!((s[0] - 0.75).abs() < 1e-12);
@@ -38,6 +45,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that normalize sums to one.
     fn normalize_sums_to_one() {
         let s = normalize(&[2.0, 2.0]);
         assert!((s.iter().sum::<f64>() - 1.0).abs() < 1e-12);

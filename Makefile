@@ -1,3 +1,5 @@
+# Local, scheduler-free entry points for the release code. The commands map to
+# supplementary Reproducibility and never depend on stored result artifacts.
 UV ?= uv
 CARGO ?= cargo
 EXTRAS := --extra analysis --extra solvers --extra viz
@@ -37,13 +39,13 @@ lint:
 test: test-rs test-py
 
 test-fast: test-rs
-	$(UV) run pytest -m "not slow"
+	$(UV) run python -m pytest -m "not slow"
 
 test-rs:
 	$(CARGO) test
 
 test-py:
-	$(UV) run pytest
+	$(UV) run python -m pytest
 
 check: lint test
 

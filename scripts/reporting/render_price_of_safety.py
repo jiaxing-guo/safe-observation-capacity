@@ -1,4 +1,4 @@
-""
+"""Render price of safety. See Experiments and supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ OMAX = 1.0 / 3.0
 
 
 def _kuhn_curves():
+    """Compute Kuhn curves for the render price of safety workflow."""
     d = json.load(open("results/spike_tradeoff_law_kuhn.json"))
 
     pick = {"2:b": "low floor", "0:b": "mid floor", "1:b": "high floor"}
@@ -34,6 +35,7 @@ def _kuhn_curves():
 
 
 def _bandit_wall():
+    """Compute bandit wall for the render price of safety workflow."""
     d = json.load(open("results/probe_bandit_sao.json"))
     w = d["pure_wall"]["curve"]
     sigma, delta = d["sigma"], d["delta"]
@@ -47,6 +49,7 @@ def _bandit_wall():
 
 
 def _holdem_ncert():
+    """Compute holdem ncert for the render price of safety workflow."""
     d = json.load(open("results/kappa_rho_sweep_holdem_tr_b2.json"))
     pr = d["per_rho"]
     pts = sorted((float(r), pr[r]["median_N_cert"]) for r in pr)
@@ -54,7 +57,7 @@ def _holdem_ncert():
 
 
 def _leduc_multiface():
-    ""
+    """Compute Leduc multiface for the render price of safety workflow."""
     d = json.load(open("results/spike_tradeoff_law_leduc.json"))
     pts = [(p["rho"], p["kappa"]) for p in d["curves"]["K|-|crr|"]]
     k0 = pts[0][1]
@@ -64,10 +67,12 @@ def _leduc_multiface():
 
 
 def _coords(pts, fx=lambda x: x, fy=lambda y: y):
+    """Serialize the selected observations as plotting coordinates."""
     return " ".join(f"({fx(x):.5g},{fy(y):.5g})" for x, y in pts)
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     wall, const = _bandit_wall()
     holdem = _holdem_ncert()
     leduc_pts, lk0, lmu, lwmax = _leduc_multiface()

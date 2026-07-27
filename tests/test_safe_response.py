@@ -1,4 +1,4 @@
-""
+"""Regression tests for test safe response. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -19,13 +19,14 @@ LEDUC_VALUE = native.blueprint_lp("leduc")[0]
 
 
 def _scbr(opp, eps_safe=0.0):
+    """Compute scbr for the test safe response workflow."""
     return safety_constrained_best_response(
         opp.behavior, v_ref=LEDUC_VALUE, eps_safe=eps_safe, game="leduc"
     )
 
 
 def test_scbr_is_safe_and_achieves_its_value():
-
+    """Verify that scbr is safe and achieves its value."""
     opp = leduc_static_biased_opponent()
     scbr = _scbr(opp)
     payoff = build_payoff("leduc")
@@ -37,7 +38,7 @@ def test_scbr_is_safe_and_achieves_its_value():
 
 
 def test_scbr_is_bracketed_by_game_value_and_best_response():
-
+    """Verify that scbr is bracketed by game value and best response."""
     for opp in (
         leduc_equilibrium_opponent(),
         leduc_static_biased_opponent(),
@@ -50,13 +51,13 @@ def test_scbr_is_bracketed_by_game_value_and_best_response():
 
 
 def test_scbr_equals_game_value_for_equilibrium():
-
+    """Verify that scbr equals game value for equilibrium."""
     scbr = _scbr(leduc_equilibrium_opponent())
     assert scbr.value == pytest.approx(LEDUC_VALUE, abs=1e-6)
 
 
 def test_scbr_relaxes_with_eps_safe():
-
+    """Verify that scbr relaxes with eps safe."""
     opp = leduc_low_reach_leak_opponent(0.9)
     tight = _scbr(opp, eps_safe=0.0).value
     loose = _scbr(opp, eps_safe=0.5).value
@@ -64,7 +65,7 @@ def test_scbr_relaxes_with_eps_safe():
 
 
 def test_scbr_ceiling_is_low_for_low_reach_leak():
-
+    """Verify that scbr ceiling is low for low reach leak."""
     opp = leduc_low_reach_leak_opponent(0.9)
     y_star = list(opp.realization())
     br_gain = best_response(y_star, game="leduc").value - LEDUC_VALUE

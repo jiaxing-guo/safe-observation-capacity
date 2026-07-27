@@ -1,4 +1,4 @@
-""
+"""Regression tests for test Leduc online. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -13,7 +13,7 @@ LEDUC_VALUE = -0.0856064240780
 
 
 def test_leduc_agent_initial_decision_is_safe_and_blueprint_like():
-
+    """Verify that Leduc agent initial decision is safe and blueprint like."""
     agent = OnlineSafeExploitAgent(game="leduc", delta=0.05, eps_safe=0.0)
     decision = agent.select()
     assert decision.safety_value >= LEDUC_VALUE - 1e-6
@@ -23,6 +23,7 @@ def test_leduc_agent_initial_decision_is_safe_and_blueprint_like():
 
 
 def test_leduc_static_biased_is_exploited_and_safe():
+    """Verify that Leduc static biased is exploited and safe."""
     results = run_online_adaptation(
         leduc_static_biased_opponent(),
         rounds=25,
@@ -38,6 +39,7 @@ def test_leduc_static_biased_is_exploited_and_safe():
 
 
 def test_leduc_near_equilibrium_stays_safe():
+    """Verify that Leduc near equilibrium stays safe."""
     results = run_online_adaptation(
         leduc_near_equilibrium_opponent(eps=0.1),
         rounds=20,
@@ -51,6 +53,7 @@ def test_leduc_near_equilibrium_stays_safe():
 
 
 def test_leduc_rounds_log_shape():
+    """Verify that Leduc rounds log shape."""
     results = run_online_adaptation(
         leduc_static_biased_opponent(),
         rounds=4,

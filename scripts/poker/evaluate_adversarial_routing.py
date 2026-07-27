@@ -1,4 +1,4 @@
-""
+"""Evaluate the adversarial routing experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -41,12 +41,14 @@ OUT = Path(
 
 
 def _structured_suite(game, actions, eq):
-    ""
+    """Compute structured suite for the evaluate adversarial routing workflow."""
 
     def river_pick(hole, hist, acts):
+        """Compute river pick for the evaluate adversarial routing workflow."""
         return "/" in hist and "f" in acts
 
     def turn_pick(hole, hist, acts):
+        """Compute turn pick for the evaluate adversarial routing workflow."""
         return "/" not in hist and "f" in acts
 
     suite: dict[str, dict[str, float]] = {"tr_equilibrium": eq}
@@ -85,6 +87,7 @@ def _structured_suite(game, actions, eq):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print(
         f"# TA2 adversarial gate envelope  game={GAME}  rho={RHO}  "
         f"n_random={N_RANDOM}  eps_frac={EPS_FRAC}",
@@ -104,6 +107,7 @@ def main() -> None:
     floor = v_ref - RHO
 
     def evaluate(name, behavior, kind):
+        """Evaluate the configured policy for the evaluate adversarial routing workflow."""
         y = list(Opponent(name=name, behavior=behavior, game=GAME).realization())
         pub = _population_public_intervals(groups, info_by, y, omega)
         obspub = _population_public_intervals(

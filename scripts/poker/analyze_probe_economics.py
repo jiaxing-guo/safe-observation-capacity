@@ -1,4 +1,4 @@
-""
+"""Analyze probe economics. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from collections import defaultdict
 import json
@@ -42,6 +42,7 @@ for name in rsd.LEAKS:
     u_probe = payoff.bilinear(list(x_probe), y_star) - v_ref
 
     def mean_real(mode, opponent=name):
+        """Compute mean real for the analyze probe economics workflow."""
         cs = by.get((opponent, mode, N), [])
         return st.mean(c["realized"] for c in cs) if cs else None
 

@@ -1,4 +1,4 @@
-""
+"""Run the showdown stress experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import os
 
@@ -16,7 +16,7 @@ POP_SEED = int(os.environ.get("POP_SEED", "2026"))
 
 
 def main() -> None:
-
+    """Run the command-line entry point."""
     for kind in ("lure_then_strike", "drift"):
         run_showdown_nonstationary(
             kind=kind,

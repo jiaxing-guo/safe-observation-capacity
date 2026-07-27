@@ -1,4 +1,4 @@
-""
+"""Run the selective labels frontier experiment. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ RHOS = [0.0, 0.005, 0.01, 0.02, 0.04, 0.06, 0.1, 0.2, 0.4]
 
 
 def _pick_target(inst, logs) -> int:
-    ""
+    """Compute pick target for the run selective labels frontier workflow."""
     L, U = build_partial_id(logs, delta=DELTA)
     idx = int(round(TARGET_Q * (inst.m - 1)))
     for off in range(inst.m):
@@ -41,6 +41,7 @@ def _pick_target(inst, logs) -> int:
 
 
 def _frontier(inst, j: int, label: str):
+    """Compute frontier for the run selective labels frontier workflow."""
     U0 = robust_optimal_value(inst)
     K = np.log(2.0 / DELTA) / (2.0 * EPS**2)
     kappa0, mu0 = safe_capacity(inst, j, 0.0, U0=U0)
@@ -111,6 +112,7 @@ def _frontier(inst, j: int, label: str):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     t0 = time.time()
     inst = make_lending_instance(m=M, c=C, seed=LOG_SEED, monotone=True)
     logs = simulate_logs(inst, n=LOG_N, seed=LOG_SEED)

@@ -1,35 +1,45 @@
+//! Kuhn algorithms for safe observation. See supplementary Reproducibility for its role in the release workflow.
+
 use std::collections::{BTreeMap, HashMap};
 
 use crate::cfr::{normalize, regret_matching};
 use crate::game::{Game, Node as GameNode};
 
+/// Defines the num actions constant.
 const NUM_ACTIONS: usize = 2;
+/// Defines the symbols constant.
 const SYMBOLS: [char; NUM_ACTIONS] = ['p', 'b'];
 
+/// Computes deals.
 pub(crate) const fn deals() -> [(usize, usize); 6] {
     [(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)]
 }
 
+/// Return whether terminal.
 pub(crate) fn is_terminal(history: &str) -> bool {
     matches!(history, "pp" | "bp" | "bb" | "pbp" | "pbb")
 }
 
 #[derive(Default, Clone)]
+/// Expand a state into its chance, decision, or terminal game node.
 struct Node {
     regret_sum: [f64; NUM_ACTIONS],
     strategy_sum: [f64; NUM_ACTIONS],
 }
 
+/// Stores state for Kuhn solution.
 pub struct KuhnSolution {
     pub value: f64,
 
     pub strategy: BTreeMap<String, [f64; NUM_ACTIONS]>,
 }
 
+/// Computes info set.
 fn info_set(card: usize, history: &str) -> String {
     format!("{card}{history}")
 }
 
+/// Computes extend.
 fn extend(history: &str, action: usize) -> String {
     let mut next = String::with_capacity(history.len() + 1);
     next.push_str(history);
@@ -37,6 +47,7 @@ fn extend(history: &str, action: usize) -> String {
     next
 }
 
+/// Computes CFR.
 fn cfr(
     nodes: &mut HashMap<String, Node>,
     cards: (usize, usize),
@@ -102,6 +113,7 @@ fn cfr(
     node_util
 }
 
+/// Computes terminal value player-one.
 pub(crate) fn terminal_value_p1(history: &str, cards: (usize, usize)) -> f64 {
     let (c0, c1) = cards;
     match history {
@@ -125,6 +137,7 @@ pub(crate) fn terminal_value_p1(history: &str, cards: (usize, usize)) -> f64 {
     }
 }
 
+/// Computes eval node.
 fn eval_node(
     strategy: &BTreeMap<String, [f64; NUM_ACTIONS]>,
     cards: (usize, usize),
@@ -146,6 +159,7 @@ fn eval_node(
     value
 }
 
+/// Evaluate the configured policy.
 pub fn evaluate(strategy: &BTreeMap<String, [f64; NUM_ACTIONS]>) -> f64 {
     deals()
         .iter()
@@ -153,6 +167,7 @@ pub fn evaluate(strategy: &BTreeMap<String, [f64; NUM_ACTIONS]>) -> f64 {
         .sum()
 }
 
+/// Solve the configured optimization problem.
 pub fn solve(iterations: u64) -> KuhnSolution {
     let mut nodes: HashMap<String, Node> = HashMap::new();
     for _ in 0..iterations {
@@ -171,18 +186,23 @@ pub fn solve(iterations: u64) -> KuhnSolution {
     KuhnSolution { value, strategy }
 }
 
+/// Stores state for Kuhn.
 pub struct Kuhn;
 
 #[derive(Clone)]
+/// Stores state for Kuhn state.
 pub struct KuhnState {
     dealt: bool,
     cards: (usize, usize),
     history: String,
 }
 
+/// Implements operations for `Kuhn`.
 impl Game for Kuhn {
+    /// Aliases the type used for state.
     type State = KuhnState;
 
+    /// Return the initial game state.
     fn root(&self) -> KuhnState {
         KuhnState {
             dealt: false,
@@ -191,6 +211,7 @@ impl Game for Kuhn {
         }
     }
 
+    /// Expand a state into its chance, decision, or terminal game node.
     fn node(&self, s: &KuhnState) -> GameNode<KuhnState> {
         if !s.dealt {
             let outcomes = deals()
@@ -240,10 +261,12 @@ impl Game for Kuhn {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
 
     #[test]
+    /// Verifies that terminal classification.
     fn terminal_classification() {
         assert!(is_terminal("pp"));
         assert!(is_terminal("pbb"));
@@ -252,6 +275,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that value matches known Kuhn value.
     fn value_matches_known_kuhn_value() {
         let sol = solve(50_000);
         assert!(

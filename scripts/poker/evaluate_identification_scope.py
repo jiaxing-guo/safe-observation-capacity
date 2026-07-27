@@ -1,4 +1,4 @@
-""
+"""Evaluate the identification scope experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -55,7 +55,7 @@ def _pin_importance(
     info_by_label: dict,
     groups: dict[str, list[str]],
 ) -> dict[tuple[str, int], float]:
-    ""
+    """Compute pin importance for the evaluate identification scope workflow."""
 
     label_to_key: dict[str, str] = {}
     for key, members in groups.items():
@@ -87,7 +87,7 @@ def _topk_event_constraints(
     fold_idx: dict[str, int],
     keep: set[tuple[str, int]],
 ) -> tuple[list[tuple[int, int, float]], list[float], list[tuple[str, int]]]:
-    ""
+    """Compute topk event constraints for the evaluate identification scope workflow."""
     entries: list[tuple[int, int, float]] = []
     h: list[float] = []
     meta: list[tuple[str, int]] = []
@@ -115,6 +115,7 @@ def _topk_event_constraints(
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     print(
         f"# C_obs SAD test (Q3, top-k event pins by identifiability content)  "
@@ -181,6 +182,7 @@ def main() -> None:
         )
 
         def realized(response, y_star=y_star) -> float:
+            """Evaluate a realization plan against the selected opponent."""
             return payoff.bilinear(list(response.realization), y_star) - v_ref
 
         core_gain = realized(core)

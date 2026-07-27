@@ -1,4 +1,4 @@
-""
+"""Check capacity sensitivity. See supplementary Reproducibility for its role in the release workflow."""
 
 import json
 import multiprocessing as mp
@@ -36,6 +36,7 @@ TURN_DEEP = ["cpp", "cpa"]
 
 
 def _kappa_at(label: str, rho: float) -> float:
+    """Compute kappa at for the check capacity sensitivity workflow."""
     pr = D._try_solve(
         lambda: D.robust_safe_response_probe(
             D._W["triv_iv"],
@@ -55,11 +56,13 @@ def _kappa_at(label: str, rho: float) -> float:
 
 
 def _ktask(args):
+    """Compute ktask for the check capacity sensitivity workflow."""
     label, rho = args
     return label, rho, _kappa_at(label, rho)
 
 
 def _probe_reach(weights: dict[str, float], rho: float) -> dict[str, float]:
+    """Compute probe reach for the check capacity sensitivity workflow."""
     if not weights:
         return {}
     pr = D._try_solve(
@@ -80,18 +83,21 @@ def _probe_reach(weights: dict[str, float], rho: float) -> dict[str, float]:
 
 
 def _build_leak(actions):
-    ""
+    """Build leak for the check capacity sensitivity workflow."""
     eq = holdem_equilibrium_opponent(GAME).behavior
     cheap = set(CHEAP_LINES)
     deep = set(EXPENSIVE_LINES) | set(TURN_DEEP)
 
     def band(hole):
+        """Compute or draw a mean-and-uncertainty band."""
         return _top_rank(hole) >= 11
 
     def cheap_call(hole, hist, acts):
+        """Compute cheap call for the check capacity sensitivity workflow."""
         return hist in cheap and band(hole) and "c" in acts
 
     def deep_fold(hole, hist, acts):
+        """Compute deep fold for the check capacity sensitivity workflow."""
         return hist in deep and band(hole) and "f" in acts
 
     y = _perturb(eq, actions, cheap_call, "c", 0.6)
@@ -100,6 +106,7 @@ def _build_leak(actions):
 
 
 def _load_cache() -> dict:
+    """Load cache for the check capacity sensitivity workflow."""
     out = {}
     if CACHE.exists():
         for line in CACHE.read_text().splitlines():
@@ -110,12 +117,14 @@ def _load_cache() -> dict:
 
 
 def _append_cache(key: str, val) -> None:
+    """Compute append cache for the check capacity sensitivity workflow."""
     CACHE.parent.mkdir(parents=True, exist_ok=True)
     with CACHE.open("a") as fh:
         fh.write(json.dumps({"key": key, "val": val}) + "\n")
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     D._init()
     actions = {i.label: [a for a, _ in i.children] for i in D._W["sf1"].info_sets}
     beh = _build_leak(actions)

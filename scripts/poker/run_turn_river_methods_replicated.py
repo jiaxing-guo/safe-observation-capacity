@@ -1,4 +1,4 @@
-""
+"""Run the turn river methods replicated experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import math
@@ -64,6 +64,7 @@ _WORKER_STATE: dict = {}
 def _oracle_gain_task(
     task: tuple[str, float, str, float, dict, list[float]],
 ) -> tuple[str, float, float]:
+    """Compute oracle gain task for the run turn river methods replicated workflow."""
     opponent_name, rho, game, v_ref, behavior, y_star = task
     payoff = build_payoff(game)
     oracle = safety_constrained_best_response(
@@ -74,11 +75,13 @@ def _oracle_gain_task(
 
 
 def _init_worker(payload: dict) -> None:
+    """Initialize process-local state for a parallel worker."""
     _WORKER_STATE.update(payload)
     _WORKER_STATE["payoff"] = build_payoff(payload["game"])
 
 
 def _solve_cell(task: tuple[int, str, float]) -> dict:
+    """Solve cell for the run turn river methods replicated workflow."""
     seed, opponent_name, rho = task
     start_time = time.time()
     game = _WORKER_STATE["game"]
@@ -125,6 +128,7 @@ def _solve_cell(task: tuple[int, str, float]) -> dict:
         )
 
     def realized_gain(response) -> float:
+        """Compute realized gain for the run turn river methods replicated workflow."""
         return payoff.bilinear(list(response.realization), y_star) - v_ref
 
     row = {
@@ -152,6 +156,7 @@ def _solve_cell(task: tuple[int, str, float]) -> dict:
 
 
 def _stats(values: list[float]) -> dict:
+    """Compute summary statistics across independent replicates."""
     count = len(values)
     mean = sum(values) / count if count else None
     if count > 1:
@@ -172,6 +177,7 @@ def _stats(values: list[float]) -> dict:
 
 
 def _aggregate(rows: list[dict]) -> list[dict]:
+    """Aggregate the supplied records into summary statistics."""
     metric_names = [
         "oracle",
         "core",
@@ -208,6 +214,7 @@ def _aggregate(rows: list[dict]) -> list[dict]:
 
 
 def _fmt_metric(stats: dict) -> str:
+    """Compute fmt metric for the run turn river methods replicated workflow."""
     mean = stats["mean"]
     ci95 = stats["ci95"]
     if mean is None:
@@ -216,6 +223,7 @@ def _fmt_metric(stats: dict) -> str:
 
 
 def _load_done() -> dict[tuple[int, str, float], dict]:
+    """Load done for the run turn river methods replicated workflow."""
     done: dict[tuple[int, str, float], dict] = {}
     if not PROGRESS.exists():
         return done
@@ -228,6 +236,7 @@ def _load_done() -> dict[tuple[int, str, float], dict]:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     print(
         f"# starting replicated turn+river method table  game={game}  "

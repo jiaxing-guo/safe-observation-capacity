@@ -1,4 +1,4 @@
-""
+"""Regression tests for test probing agent. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -19,16 +19,19 @@ LEDUC_VALUE = native.blueprint_lp("leduc")[0]
 
 
 def test_probing_requires_full_monitoring():
+    """Verify that probing requires full monitoring."""
     with pytest.raises(ValueError):
         OnlineSafeExploitAgent(game="leduc", probing=True, monitoring="public")
 
 
 def test_unknown_importance_mode_raises():
+    """Verify that unknown importance mode raises."""
     with pytest.raises(ValueError):
         OnlineSafeExploitAgent(game="leduc", probing=True, importance_mode="psychic")
 
 
 def test_probing_decision_reports_probe_fields():
+    """Verify that probing decision reports probe fields."""
     agent = OnlineSafeExploitAgent(
         game="leduc", probing=True, beta=1.0, probe_budget=ProbeBudget(total=0.0)
     )
@@ -40,6 +43,7 @@ def test_probing_decision_reports_probe_fields():
 
 
 def _run_agent(opp, probing, beta, total, per_round, rounds=30, ep=150):
+    """Run the agent experiment for the test probing agent workflow."""
     budget = ProbeBudget(total=total, per_round=per_round)
     agent = OnlineSafeExploitAgent(
         game="leduc", probing=probing, beta=beta, probe_budget=budget
@@ -60,7 +64,7 @@ def _run_agent(opp, probing, beta, total, per_round, rounds=30, ep=150):
 
 
 def test_hard_safe_probing_preserves_theorem1():
-
+    """Verify that hard safe probing preserves theorem1."""
     opp = leduc_low_reach_leak_opponent(0.9)
     _gain, min_safety, spent, _ = _run_agent(opp, True, 2.0, 0.0, 0.0)
     assert min_safety >= LEDUC_VALUE - 1e-8
@@ -68,7 +72,7 @@ def test_hard_safe_probing_preserves_theorem1():
 
 
 def test_budgeted_probing_cracks_the_leak():
-
+    """Verify that budgeted probing cracks the leak."""
     opp = leduc_low_reach_leak_opponent(0.9)
     passive_gain, _, _, _ = _run_agent(opp, False, 0.0, 0.0, 0.0)
     budget_gain, min_safety, spent, _ = _run_agent(opp, True, 2.0, 1e9, 0.5)
@@ -79,7 +83,7 @@ def test_budgeted_probing_cracks_the_leak():
 
 
 def test_budget_exhaustion_reverts_to_hard_safe():
-
+    """Verify that budget exhaustion reverts to hard safe."""
     opp = leduc_low_reach_leak_opponent(0.9)
     budget = ProbeBudget(total=1.0, per_round=0.5)
     agent = OnlineSafeExploitAgent(
@@ -97,6 +101,7 @@ def test_budget_exhaustion_reverts_to_hard_safe():
 
 
 def test_probing_comparison_arms_and_metrics():
+    """Verify that probing comparison arms and metrics."""
     opp = leduc_low_reach_leak_opponent(0.9)
     res = run_probing_comparison(
         opp, rounds=25, episodes_per_round=150, seeds=(42, 43), out_dir=None
@@ -127,7 +132,7 @@ def test_probing_comparison_arms_and_metrics():
 
 
 def test_information_bonus_adds_identification_not_exploitation():
-
+    """Verify that information bonus adds identification not exploitation."""
     opp = leduc_low_reach_leak_opponent(0.9)
     res = run_probing_comparison(
         opp, rounds=30, episodes_per_round=200, seeds=(42, 43, 44), out_dir=None
@@ -146,7 +151,7 @@ def test_information_bonus_adds_identification_not_exploitation():
 
 
 def test_probing_comparison_shrinks_target_intervals():
-
+    """Verify that probing comparison shrinks target intervals."""
     opp = leduc_low_reach_leak_opponent(0.9)
     res = run_probing_comparison(
         opp, rounds=25, episodes_per_round=150, seeds=(42, 43), out_dir=None
@@ -157,7 +162,7 @@ def test_probing_comparison_shrinks_target_intervals():
 
 
 def test_sensitivity_importance_outperforms_uniform_at_small_budget():
-
+    """Verify that sensitivity importance outperforms uniform at small budget."""
     opp = leduc_low_reach_leak_opponent(0.9)
     res = run_importance_comparison(
         opp,

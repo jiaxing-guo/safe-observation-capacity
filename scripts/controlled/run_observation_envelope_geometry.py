@@ -1,4 +1,4 @@
-""
+"""Run the observation envelope geometry experiment. See supplementary Additional Experiments."""
 
 import json
 import os
@@ -51,7 +51,7 @@ def _population_stores(
     agent_behavior: dict[str, list[float]],
     opp_behavior: dict[str, list[float]],
 ) -> tuple[OpponentEvidenceStore, OpponentEvidenceStore]:
-    ""
+    """Compute population stores for the run observation envelope geometry workflow."""
     ev_point = OpponentEvidenceStore.for_game(game)
     ev_public = OpponentEvidenceStore.for_game(game)
     _pay, show, fold = native.simulate_showdown(
@@ -70,7 +70,7 @@ def _oracle_radii(
     centres: dict[str, dict[str, list[float]]],
     omega: dict[str, float],
 ) -> dict[str, dict[str, float]]:
-    ""
+    """Compute oracle radii for the run observation envelope geometry workflow."""
     out: dict[str, dict[str, float]] = {
         name: {"max": 0.0, "reach_mean": 0.0} for name in centres
     }
@@ -95,6 +95,7 @@ def _oracle_radii(
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)

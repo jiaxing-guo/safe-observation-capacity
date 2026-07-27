@@ -1,17 +1,23 @@
+//! Sim algorithms for safe observation. See supplementary Reproducibility for its role in the release workflow.
+
 use std::collections::HashMap;
 
 use crate::game::{Game, Node};
 use crate::kuhn::Kuhn;
 
+/// Stores state for split mix64.
 struct SplitMix64 {
     state: u64,
 }
 
+/// Implements operations for `SplitMix64`.
 impl SplitMix64 {
+    /// Constructs a new value from the supplied configuration.
     fn new(seed: u64) -> Self {
         Self { state: seed }
     }
 
+    /// Computes next integer.
     fn next_u64(&mut self) -> u64 {
         self.state = self.state.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut z = self.state;
@@ -20,17 +26,20 @@ impl SplitMix64 {
         z ^ (z >> 31)
     }
 
+    /// Draw the next uniform floating-point sample.
     fn next_f64(&mut self) -> f64 {
         (self.next_u64() >> 11) as f64 / (1u64 << 53) as f64
     }
 }
 
+/// Stores state for sim result.
 pub struct SimResult {
     pub total_payoff: f64,
 
     pub p2_counts: HashMap<String, Vec<u64>>,
 }
 
+/// Draw a sample from the configured distribution.
 fn sample(rng: &mut SplitMix64, probs: &[f64]) -> usize {
     let u = rng.next_f64();
     let mut acc = 0.0;
@@ -43,6 +52,7 @@ fn sample(rng: &mut SplitMix64, probs: &[f64]) -> usize {
     probs.len() - 1
 }
 
+/// Sample outcome.
 fn sample_outcome<S>(rng: &mut SplitMix64, outcomes: &[(f64, S)]) -> usize {
     let u = rng.next_f64();
     let mut acc = 0.0;
@@ -55,6 +65,7 @@ fn sample_outcome<S>(rng: &mut SplitMix64, outcomes: &[(f64, S)]) -> usize {
     outcomes.len() - 1
 }
 
+/// Simulate trajectories under the configured policies.
 pub fn simulate<G: Game>(
     game: &G,
     strat0: &HashMap<String, Vec<f64>>,
@@ -105,6 +116,7 @@ pub fn simulate<G: Game>(
     }
 }
 
+/// Stores state for showdown sim result.
 pub struct ShowdownSimResult {
     pub total_payoff: f64,
 
@@ -113,6 +125,7 @@ pub struct ShowdownSimResult {
     pub p2_counts_folded: HashMap<String, Vec<u64>>,
 }
 
+/// Simulate showdown.
 pub fn simulate_showdown<G: Game>(
     game: &G,
     strat0: &HashMap<String, Vec<f64>>,
@@ -177,6 +190,7 @@ pub fn simulate_showdown<G: Game>(
     }
 }
 
+/// Simulate Kuhn.
 pub fn simulate_kuhn(
     x1: &HashMap<String, Vec<f64>>,
     y2: &HashMap<String, Vec<f64>>,
@@ -187,10 +201,12 @@ pub fn simulate_kuhn(
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::*;
     use crate::sequence_form::compile_kuhn;
 
+    /// Computes uniform behavior.
     fn uniform_behavior(player: usize) -> HashMap<String, Vec<f64>> {
         let sf = compile_kuhn(player);
         sf.info_sets
@@ -199,6 +215,7 @@ mod tests {
             .collect()
     }
 
+    /// Computes always pass player-two.
     fn always_pass_p2() -> HashMap<String, Vec<f64>> {
         let sf = compile_kuhn(1);
         sf.info_sets
@@ -208,6 +225,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that deterministic for fixed seed.
     fn deterministic_for_fixed_seed() {
         let x1 = uniform_behavior(0);
         let y2 = uniform_behavior(1);
@@ -218,6 +236,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that counts total matches visits.
     fn counts_total_matches_visits() {
         let x1 = uniform_behavior(0);
         let y2 = uniform_behavior(1);
@@ -229,6 +248,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that always pass opponent only passes.
     fn always_pass_opponent_only_passes() {
         let x1 = uniform_behavior(0);
         let y2 = always_pass_p2();
@@ -239,6 +259,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that average payoff in reasonable range.
     fn average_payoff_in_reasonable_range() {
         let x1 = uniform_behavior(0);
         let y2 = uniform_behavior(1);
@@ -247,6 +268,7 @@ mod tests {
         assert!((-2.0..=2.0).contains(&avg));
     }
 
+    /// Computes uniform Leduc.
     fn uniform_leduc(player: usize) -> HashMap<String, Vec<f64>> {
         let sf = crate::leduc::compile_leduc(player);
         sf.info_sets
@@ -259,6 +281,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that showdown split sums to full counts Leduc.
     fn showdown_split_sums_to_full_counts_leduc() {
         use crate::leduc::Leduc;
         let x0 = uniform_leduc(0);
@@ -288,6 +311,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that showdown deterministic for fixed seed.
     fn showdown_deterministic_for_fixed_seed() {
         use crate::leduc::Leduc;
         let x0 = uniform_leduc(0);

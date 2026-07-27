@@ -1,3 +1,5 @@
+//! Robust cuts algorithms for safe observation. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River.
+
 use crate::best_response::treeplex_opt;
 use crate::confidence::ConfidenceSet;
 use crate::lp::{apply_highs_options, require_optimal};
@@ -5,6 +7,7 @@ use crate::payoff_oracle::PayoffOracle;
 use crate::sequence_form::SequenceForm;
 use highs::{Col, RowProblem, Sense};
 
+/// Stores state for cut params.
 pub struct CutParams {
     pub max_iters: usize,
 
@@ -17,7 +20,9 @@ pub struct CutParams {
     pub max_wall_s: f64,
 }
 
+/// Implements operations for `CutParams`.
 impl Default for CutParams {
+    /// Returns the default configuration.
     fn default() -> Self {
         Self {
             max_iters: 200,
@@ -30,6 +35,7 @@ impl Default for CutParams {
 }
 
 #[derive(Clone, Copy, Debug)]
+/// Stores state for cut trace row.
 pub struct CutTraceRow {
     pub iter: usize,
     pub wall_s: f64,
@@ -37,6 +43,7 @@ pub struct CutTraceRow {
     pub best_lb: f64,
 }
 
+/// Stores state for cut solution.
 pub struct CutSolution {
     pub realization: Vec<f64>,
 
@@ -53,6 +60,7 @@ pub struct CutSolution {
     pub trace: Vec<CutTraceRow>,
 }
 
+/// Computes inner min linear program.
 pub fn inner_min_lp(sf1: &SequenceForm, conf: &ConfidenceSet, c: &[f64]) -> (f64, Vec<f64>) {
     let n_y = sf1.num_sequences();
     assert_eq!(
@@ -82,6 +90,8 @@ pub fn inner_min_lp(sf1: &SequenceForm, conf: &ConfidenceSet, c: &[f64]) -> (f64
     };
 
     let mut solved = None;
+    // Retry numerically difficult adversary problems with progressively more
+    // conservative HiGHS configurations.
     for rung in 0..3 {
         let mut model = build().optimise(Sense::Minimise);
         apply_highs_options(&mut model);
@@ -105,6 +115,7 @@ pub fn inner_min_lp(sf1: &SequenceForm, conf: &ConfidenceSet, c: &[f64]) -> (f64
     (value, y)
 }
 
+/// Computes repair to floor.
 pub fn repair_to_floor<O: PayoffOracle>(
     oracle: &O,
     sf1: &SequenceForm,
@@ -121,6 +132,7 @@ pub fn repair_to_floor<O: PayoffOracle>(
         w_bp >= v_target,
         "blueprint violates the floor target ({w_bp} < {v_target}): cannot repair"
     );
+    // Concavity of worst-case value makes this blueprint mixture floor-safe.
     let alpha = ((v_target - w_x) / (w_bp - w_x)).clamp(0.0, 1.0);
     let mixed: Vec<f64> = x
         .iter()
@@ -135,6 +147,7 @@ pub fn repair_to_floor<O: PayoffOracle>(
     (mixed, alpha, w_mixed)
 }
 
+/// Computes robust response cuts.
 pub fn robust_response_cuts<O: PayoffOracle>(
     oracle: &O,
     sf0: &SequenceForm,
@@ -194,6 +207,8 @@ pub fn robust_response_cuts<O: PayoffOracle>(
         }
         last_ub = ub;
 
+        // The in-out point stabilizes separation while retaining the current
+        // feasible incumbent as an explicit lower bound.
         let x_q: Vec<f64> = incumbent
             .iter()
             .zip(&x_out)
@@ -209,6 +224,7 @@ pub fn robust_response_cuts<O: PayoffOracle>(
 
         let (rv, y_min) = inner_min_lp(sf1, conf, &c_q);
         value_cuts.push(oracle.a_y(&y_min));
+        // A bounded cut window limits master growth on full-deck river games.
         if value_cuts.len() > params.cut_window {
             let excess = value_cuts.len() - params.cut_window;
             value_cuts.drain(..excess);
@@ -234,6 +250,7 @@ pub fn robust_response_cuts<O: PayoffOracle>(
     }
 }
 
+/// Computes linear objective cuts.
 pub fn linear_objective_cuts<O: PayoffOracle>(
     oracle: &O,
     sf0: &SequenceForm,
@@ -322,6 +339,7 @@ pub fn linear_objective_cuts<O: PayoffOracle>(
     }
 }
 
+/// Solve master linear.
 fn solve_master_linear(
     sf0: &SequenceForm,
     c: &[f64],
@@ -358,6 +376,7 @@ fn solve_master_linear(
     (value, x)
 }
 
+/// Solve master.
 fn solve_master(
     sf0: &SequenceForm,
     value_cuts: &[Vec<f64>],
@@ -408,10 +427,12 @@ fn solve_master(
 }
 
 #[cfg(test)]
+/// Provides shared fixtures for this module's regression tests.
 pub(crate) mod test_util {
     use super::*;
     use std::collections::HashMap;
 
+    /// Construct confidence constraints for box.
     pub fn box_confidence(
         sf1: &SequenceForm,
         b1: &HashMap<String, Vec<f64>>,
@@ -436,6 +457,7 @@ pub(crate) mod test_util {
 }
 
 #[cfg(test)]
+/// Contains regression tests for this module.
 mod tests {
     use super::test_util::box_confidence;
     use super::*;
@@ -445,6 +467,7 @@ mod tests {
     use crate::river_range::RangeGame;
 
     #[test]
+    /// Verifies that cutting plane matches exact robust linear program on compact river.
     fn cutting_plane_matches_exact_robust_lp_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -506,6 +529,7 @@ mod tests {
 
     #[test]
     #[ignore = "full river robust-solver timing; run explicitly in release mode"]
+    /// Verifies that full river smoke robust solvers.
     fn full_river_smoke_robust_solvers() {
         use crate::hand_eval::card;
         use crate::holdem::{HoldemRules, RiverEndgame};
@@ -596,6 +620,7 @@ mod tests {
         assert!(w >= v_target - 1e-9);
     }
 
+    /// Computes robust solver benchmark.
     fn robust_solver_benchmark(suffix: &str, shape: &str) {
         use crate::holdem::turn_river_game;
         use crate::payoff::build;
@@ -704,26 +729,31 @@ mod tests {
 
     #[test]
     #[ignore = "robust solver benchmark; run explicitly in release mode"]
+    /// Verifies that robust solver b2 dense.
     fn robust_solver_b2_dense() {
         robust_solver_benchmark("_b2", "dense");
     }
     #[test]
     #[ignore = "robust solver benchmark; run explicitly in release mode"]
+    /// Verifies that robust solver b2 sparse.
     fn robust_solver_b2_sparse() {
         robust_solver_benchmark("_b2", "sparse");
     }
     #[test]
     #[ignore = "robust solver benchmark; run explicitly in release mode"]
+    /// Verifies that robust solver b4 dense.
     fn robust_solver_b4_dense() {
         robust_solver_benchmark("_b4", "dense");
     }
     #[test]
     #[ignore = "robust solver benchmark; run explicitly in release mode"]
+    /// Verifies that robust solver b4 sparse.
     fn robust_solver_b4_sparse() {
         robust_solver_benchmark("_b4", "sparse");
     }
 
     #[test]
+    /// Verifies that linear cuts match safety constrained br on compact river.
     fn linear_cuts_match_safety_constrained_br_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);
@@ -757,6 +787,7 @@ mod tests {
     }
 
     #[test]
+    /// Verifies that repair restores floor on compact river.
     fn repair_restores_floor_on_compact_river() {
         let game = canonical_holdem();
         let rg = RangeGame::new(&game);

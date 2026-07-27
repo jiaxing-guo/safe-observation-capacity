@@ -1,4 +1,4 @@
-""
+"""Run the adaptive coverage experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from collections import defaultdict
 import json
@@ -24,6 +24,7 @@ SEEDS = tuple(range(42, 67))
 
 
 def _inside(game, groups, intervals, weights, y_star) -> bool:
+    """Return whether the estimate lies inside the supplied interval."""
     grp = {k: list(v) for k, v in groups.items()}
     payload = {k: [tuple(b) for b in bd] for k, bd in intervals.items()}
     cset = native.ConfidenceSet.from_public(game, grp, payload, weights)
@@ -31,7 +32,7 @@ def _inside(game, groups, intervals, weights, y_star) -> bool:
 
 
 def _one_seed(arg):
-    ""
+    """Compute one seed for the run adaptive coverage workflow."""
     game, opp_name, gval, xbp, seed = arg
     opp = holdem_showdown_opponent_suite(game)[opp_name]
     y_star = list(opp.realization())
@@ -94,6 +95,7 @@ def _one_seed(arg):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = "holdem"
     bp = solve_blueprint(game, method="lp")
     xbp = tuple(bp.realization)

@@ -1,4 +1,4 @@
-""
+"""Regression tests for conftest. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -38,7 +38,7 @@ SLOW_TESTS: frozenset[str] = frozenset(
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
-    ""
+    """Compute pytest collection modifyitems for the conftest workflow."""
     for item in items:
         if getattr(item, "originalname", item.name) in SLOW_TESTS:
             item.add_marker(pytest.mark.slow)

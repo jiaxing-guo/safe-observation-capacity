@@ -1,4 +1,4 @@
-""
+"""Regression tests for test opponents. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -44,6 +44,7 @@ HOLDEM_VALUE = -0.042830296192800967
 
 
 def _is_valid_behavior(opp: Opponent, player: int = 1) -> None:
+    """Compute is valid behavior for the test opponents workflow."""
     sf = compile_leduc(player) if opp.game == "leduc" else None
 
     if sf is not None:
@@ -58,11 +59,12 @@ def _is_valid_behavior(opp: Opponent, player: int = 1) -> None:
 
 @pytest.mark.parametrize("name", sorted(leduc_opponent_suite()))
 def test_leduc_opponents_are_well_formed(name):
+    """Verify that Leduc opponents are well formed."""
     _is_valid_behavior(leduc_opponent_suite()[name])
 
 
 def test_kuhn_suite_still_well_formed():
-
+    """Verify that Kuhn suite still well formed."""
     for opp in opponent_suite().values():
         assert opp.game == "kuhn"
         from safe_observation.sequence_form import compile_kuhn
@@ -71,17 +73,19 @@ def test_kuhn_suite_still_well_formed():
 
 
 def test_equilibrium_opponent_is_essentially_unexploitable():
-
+    """Verify that equilibrium opponent is essentially unexploitable."""
     expl = best_response_value(leduc_equilibrium_opponent())
     assert expl == pytest.approx(LEDUC_VALUE, abs=1e-6)
 
 
 def test_static_biased_is_clearly_exploitable():
+    """Verify that static biased is clearly exploitable."""
     expl = best_response_value(leduc_static_biased_opponent())
     assert expl > LEDUC_VALUE + 0.1
 
 
 def test_exploitability_orders_eq_below_near_below_static():
+    """Verify that exploitability orders eq below near below static."""
     eq = best_response_value(leduc_equilibrium_opponent())
     near = best_response_value(leduc_near_equilibrium_opponent(eps=0.1))
     static = best_response_value(leduc_static_biased_opponent())
@@ -90,13 +94,14 @@ def test_exploitability_orders_eq_below_near_below_static():
 
 
 def test_near_equilibrium_exploitability_shrinks_with_eps():
-
+    """Verify that near equilibrium exploitability shrinks with eps."""
     small = best_response_value(leduc_near_equilibrium_opponent(eps=0.02))
     large = best_response_value(leduc_near_equilibrium_opponent(eps=0.3))
     assert small < large
 
 
 def test_near_equilibrium_is_within_eps_of_nash():
+    """Verify that near equilibrium is within eps of Nash."""
     eps = 0.1
     eq = leduc_equilibrium_opponent().behavior
     near = leduc_near_equilibrium_opponent(eps=eps).behavior
@@ -106,6 +111,7 @@ def test_near_equilibrium_is_within_eps_of_nash():
 
 
 def test_private_state_leak_deviates_only_on_leak_rank():
+    """Verify that private state leak deviates only on leak rank."""
     eq = leduc_equilibrium_opponent().behavior
     leak = leduc_private_state_leak_opponent(leak_rank="J", leak=0.6).behavior
     deviating_ranks = set()
@@ -116,6 +122,7 @@ def test_private_state_leak_deviates_only_on_leak_rank():
 
 
 def test_trap_is_aggressive_with_king():
+    """Verify that trap is aggressive with king."""
     trap = leduc_trap_opponent()
     actions_by_label = {
         info.label: [a for a, _ in info.children] for info in compile_leduc(1).info_sets
@@ -129,6 +136,7 @@ def test_trap_is_aggressive_with_king():
 
 
 def test_always_fold_folds_when_possible():
+    """Verify that always fold folds when possible."""
     opp = leduc_always_fold_opponent()
     actions_by_label = {
         info.label: [a for a, _ in info.children] for info in compile_leduc(1).info_sets
@@ -140,28 +148,32 @@ def test_always_fold_folds_when_possible():
 
 
 def test_opponent_from_spec_leduc():
+    """Verify that opponent from spec Leduc."""
     opp = opponent_from_spec({"game": "leduc", "type": "near_equilibrium", "eps": 0.05})
     assert opp.game == "leduc"
     assert opp.name == "near_equilibrium"
 
 
 def test_opponent_from_spec_unknown_game():
+    """Verify that opponent from spec unknown game."""
     with pytest.raises(ValueError):
         opponent_from_spec({"game": "chess", "type": "static_biased"})
 
 
 def test_opponent_from_spec_unknown_type_for_game():
+    """Verify that opponent from spec unknown type for game."""
     with pytest.raises(ValueError):
         opponent_from_spec({"game": "kuhn", "type": "near_equilibrium"})
 
 
 def test_leduc_game_value_anchor():
-
+    """Verify that Leduc game value anchor."""
     value, _ = native.blueprint_lp("leduc")
     assert value == pytest.approx(LEDUC_VALUE, abs=1e-6)
 
 
 def _is_valid_holdem_behavior(opp: Opponent) -> None:
+    """Compute is valid holdem behavior."""
     sf = compile_holdem(1)
     for info in sf.info_sets:
         dist = opp.behavior[info.label]
@@ -173,6 +185,7 @@ def _is_valid_holdem_behavior(opp: Opponent) -> None:
 
 @pytest.mark.parametrize("name", sorted(holdem_showdown_opponent_suite()))
 def test_holdem_opponents_are_well_formed(name):
+    """Verify that holdem opponents are well formed."""
     opp = holdem_showdown_opponent_suite()[name]
     assert opp.game == "holdem"
     _is_valid_holdem_behavior(opp)
@@ -180,23 +193,26 @@ def test_holdem_opponents_are_well_formed(name):
 
 @pytest.mark.parametrize("name", sorted(holdem_structured_opponent_suite()))
 def test_holdem_structured_opponents_are_well_formed(name):
+    """Verify that holdem structured opponents are well formed."""
     opp = holdem_structured_opponent_suite()[name]
     assert opp.game == "holdem"
     _is_valid_holdem_behavior(opp)
 
 
 def test_holdem_game_value_anchor():
+    """Verify that holdem game value anchor."""
     value, _ = native.blueprint_lp("holdem")
     assert value == pytest.approx(HOLDEM_VALUE, abs=1e-6)
 
 
 def test_holdem_equilibrium_is_essentially_unexploitable():
+    """Verify that holdem equilibrium is essentially unexploitable."""
     expl = best_response_value(holdem_equilibrium_opponent())
     assert expl == pytest.approx(HOLDEM_VALUE, abs=1e-6)
 
 
 def test_holdem_population_leaks_are_exploitable():
-
+    """Verify that holdem population leaks are exploitable."""
     eq = best_response_value(holdem_equilibrium_opponent())
     for factory in (
         holdem_overfold_opponent,
@@ -207,13 +223,14 @@ def test_holdem_population_leaks_are_exploitable():
 
 
 def test_holdem_exploitability_orders_eq_below_near():
+    """Verify that holdem exploitability orders eq below near."""
     eq = best_response_value(holdem_equilibrium_opponent())
     near = best_response_value(holdem_near_equilibrium_opponent(eps=0.1))
     assert eq <= near + 1e-9
 
 
 def test_holdem_censored_fold_deviates_only_on_shallow_lines():
-
+    """Verify that holdem censored fold deviates only on shallow lines."""
     eq = holdem_equilibrium_opponent().behavior
     leak = holdem_censored_fold_opponent().behavior
     shallow = _holdem_shallow_fold_lines()
@@ -225,6 +242,7 @@ def test_holdem_censored_fold_deviates_only_on_shallow_lines():
 
 
 def test_holdem_low_reach_leak_deviates_only_on_deep_lines():
+    """Verify that holdem low reach leak deviates only on deep lines."""
     eq = holdem_equilibrium_opponent().behavior
     leak = holdem_low_reach_leak_opponent().behavior
     deep = _holdem_deep_fold_lines()
@@ -236,11 +254,12 @@ def test_holdem_low_reach_leak_deviates_only_on_deep_lines():
 
 
 def test_holdem_censored_fold_is_highly_exploitable():
-
+    """Verify that holdem censored fold is highly exploitable."""
     assert best_response_value(holdem_censored_fold_opponent()) > HOLDEM_VALUE + 0.5
 
 
 def test_holdem_shallow_and_deep_lines_are_disjoint_and_nonempty():
+    """Verify that holdem shallow and deep lines are disjoint and nonempty."""
     shallow = _holdem_shallow_fold_lines()
     deep = _holdem_deep_fold_lines()
     assert shallow and deep
@@ -250,7 +269,7 @@ def test_holdem_shallow_and_deep_lines_are_disjoint_and_nonempty():
 
 
 def test_holdem_mixed_fold_call_overfolds_on_shallow_lines():
-
+    """Verify that holdem mixed fold call overfolds on shallow lines."""
     eq = holdem_equilibrium_opponent().behavior
     actions = _holdem_p2_actions()
     shallow = _holdem_shallow_fold_lines()
@@ -268,7 +287,7 @@ def test_holdem_mixed_fold_call_overfolds_on_shallow_lines():
 
 
 def test_holdem_fold_and_call_overcalls_off_the_shallow_lines():
-
+    """Verify that holdem fold and call overcalls off the shallow lines."""
     eq = holdem_equilibrium_opponent().behavior
     actions = _holdem_p2_actions()
     shallow = _holdem_shallow_fold_lines()
@@ -285,6 +304,7 @@ def test_holdem_fold_and_call_overcalls_off_the_shallow_lines():
 
 
 def test_holdem_private_card_fold_deviates_only_on_no_ace_combos():
+    """Verify that holdem private card fold deviates only on no ace combos."""
     eq = holdem_equilibrium_opponent().behavior
     behavior = holdem_private_card_fold_opponent().behavior
     for label, dist in behavior.items():
@@ -298,6 +318,7 @@ def test_holdem_private_card_fold_deviates_only_on_no_ace_combos():
     "game", ["holdem", "holdem_paired", "holdem_dry", "holdem_wet", "holdem_low"]
 )
 def test_holdem_structured_marginal_overfold_targets_board_aware_headroom(game):
+    """Verify that holdem structured marginal overfold targets board aware headroom."""
     eq = holdem_equilibrium_opponent(game).behavior
     behavior = holdem_board_marginal_overfold_opponent(game=game).behavior
     actions = _holdem_p2_actions(game)
@@ -315,6 +336,7 @@ def test_holdem_structured_marginal_overfold_targets_board_aware_headroom(game):
 
 
 def test_holdem_structured_ambiguous_twins_move_different_private_classes():
+    """Verify that holdem structured ambiguous twins move different private classes."""
     eq = holdem_equilibrium_opponent().behavior
     marginal = holdem_ambiguous_fold_marginal_opponent().behavior
     strong = holdem_ambiguous_fold_strong_opponent().behavior
@@ -335,6 +357,7 @@ def test_holdem_structured_ambiguous_twins_move_different_private_classes():
 
 
 def test_holdem_structured_public_fold_is_public_homogeneous_control():
+    """Verify that holdem structured public fold is public homogeneous control."""
     eq = holdem_equilibrium_opponent().behavior
     behavior = holdem_public_fold_opponent().behavior
     actions = _holdem_p2_actions()
@@ -351,12 +374,14 @@ def test_holdem_structured_public_fold_is_public_homogeneous_control():
 
 
 def test_opponent_from_spec_holdem_structured_private_structured():
+    """Verify that opponent from spec holdem structured private structured."""
     opp = opponent_from_spec({"game": "holdem", "type": "bluffcatcher_station"})
     assert opp.name == "bluffcatcher_station"
     _is_valid_holdem_behavior(opp)
 
 
 def test_holdem_mixed_and_limitation_opponents_are_exploitable():
+    """Verify that holdem mixed and limitation opponents are exploitable."""
     eq = best_response_value(holdem_equilibrium_opponent())
     for factory in (
         holdem_fold_and_call_opponent,
@@ -367,6 +392,7 @@ def test_holdem_mixed_and_limitation_opponents_are_exploitable():
 
 
 def test_opponent_from_spec_holdem():
+    """Verify that opponent from spec holdem."""
     opp = opponent_from_spec({"game": "holdem", "type": "censored_fold", "leak": 0.8})
     assert opp.game == "holdem"
     assert opp.name == "censored_fold"

@@ -1,4 +1,4 @@
-""
+"""Check value fiber. See supplementary Reproducibility for its role in the release workflow."""
 
 import sys
 
@@ -19,11 +19,12 @@ DEV = ["river_overfold_w80", "turn_overfold_w70", "revealed_call_strong"]
 
 
 def _hist(label: str) -> str:
+    """Compute hist for the check value fiber workflow."""
     return label.split("|", 1)[1] if "|" in label else ""
 
 
 def _decompose(value: dict[str, float]) -> dict[str, float]:
-    ""
+    """Compute decompose for the check value fiber workflow."""
     by_state: dict[str, list[float]] = {}
     for label, v in value.items():
         by_state.setdefault(_hist(label), []).append(v)
@@ -57,7 +58,7 @@ def _decompose(value: dict[str, float]) -> dict[str, float]:
 
 
 def _dpub_const_within(dpub: dict[str, float], value: dict[str, float]) -> float:
-    ""
+    """Compute dpub const within for the check value fiber workflow."""
     by_state: dict[str, list[float]] = {}
     for label in value:
         by_state.setdefault(_hist(label), []).append(dpub.get(label, 0.0))
@@ -66,6 +67,7 @@ def _dpub_const_within(dpub: dict[str, float], value: dict[str, float]) -> float
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     D._init()
     print(f"# Public-fiber value-identifiability smoke on {GAME}\n")
     print(

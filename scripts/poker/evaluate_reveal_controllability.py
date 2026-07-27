@@ -1,4 +1,4 @@
-""
+"""Evaluate the reveal controllability experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ _W: dict[str, Any] = {}
 
 
 def _fold_indices(sf1) -> dict[str, int]:
+    """Compute fold indices for the evaluate reveal controllability workflow."""
     out: dict[str, int] = {}
     for info in sf1.info_sets:
         acts = [a for a, _ in info.children]
@@ -39,11 +40,12 @@ def _fold_indices(sf1) -> dict[str, int]:
 
 
 def _line_of(label: str) -> str:
+    """Compute line of for the evaluate reveal controllability workflow."""
     return label.split("|", 1)[1] if "|" in label else label
 
 
 def _build() -> dict[str, Any]:
-    ""
+    """Build the configured game or confidence object."""
     sf1 = compile_game(GAME, 1)
     v_ref = solve_blueprint(GAME, method="lp").value
     fold_idx = _fold_indices(sf1)
@@ -95,12 +97,14 @@ def _build() -> dict[str, Any]:
 
 
 def _init_worker() -> None:
+    """Initialize process-local state for a parallel worker."""
     if os.environ.get("SAFE_OBSERVATION_HIGHS_THREADS") is None:
         os.environ["SAFE_OBSERVATION_HIGHS_THREADS"] = "1"
     _W.update(_build())
 
 
 def _solve(pins: list[tuple[int, float]]) -> float:
+    """Solve the configured optimization problem."""
     entries: list[tuple[int, int, float]] = []
     h: list[float] = []
     meta: list[tuple[str, int]] = []
@@ -121,7 +125,7 @@ def _solve(pins: list[tuple[int, float]]) -> float:
 
 
 def _cell(task: tuple[str, int]) -> dict[str, Any]:
-    ""
+    """Run one independently reproducible experiment cell."""
     name, m = task
     rec = _W["opp"][name]
     child_val: dict[int, float] = rec["child_val"]
@@ -146,6 +150,7 @@ def _cell(task: tuple[str, int]) -> dict[str, Any]:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     t0 = time.time()
     meta = _build()
     tasks: list[tuple[str, int]] = []

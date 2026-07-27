@@ -1,4 +1,4 @@
-""
+"""Evaluate the reveal necessity experiment. See supplementary Additional Experiments."""
 
 import json
 import os
@@ -19,6 +19,7 @@ TWINS = {
 
 
 def _public_obs(y: dict) -> np.ndarray:
+    """Compute public obs for the evaluate reveal necessity workflow."""
     p = {"A": 0.0, "B": 0.0}
     for (a, _t), m in y.items():
         p[a] += m
@@ -26,16 +27,18 @@ def _public_obs(y: dict) -> np.ndarray:
 
 
 def _reveal_obs(y: dict) -> np.ndarray:
+    """Compute reveal obs for the evaluate reveal necessity workflow."""
     keys = [("A", "H"), ("A", "L"), ("B", "H"), ("B", "L")]
     return np.array([y.get(k, 0.0) for k in keys])
 
 
 def _l1_gap(u: np.ndarray, v: np.ndarray) -> float:
+    """Compute l1 gap for the evaluate reveal necessity workflow."""
     return float(np.abs(u - v).sum() / 2.0)
 
 
 def _robust_public() -> float:
-    ""
+    """Compute robust public for the evaluate reveal necessity workflow."""
     nx = 9
     c = np.zeros(nx)
     c[6] = -1.0
@@ -43,12 +46,14 @@ def _robust_public() -> float:
     b_ub: list[float] = []
 
     def dA(k: float) -> np.ndarray:
+        """Compute d a for the evaluate reveal necessity workflow."""
         r = np.zeros(nx)
         r[0] += k
         r[1] -= k
         return r
 
     def dB(k: float) -> np.ndarray:
+        """Compute d b for the evaluate reveal necessity workflow."""
         r = np.zeros(nx)
         r[3] += k
         r[4] -= k
@@ -95,7 +100,7 @@ def _robust_public() -> float:
 
 
 def _oracle_public(twin: str) -> float:
-    ""
+    """Compute oracle public for the evaluate reveal necessity workflow."""
     nx = 8
     c = np.zeros(nx)
     if twin == "y_A":
@@ -106,12 +111,14 @@ def _oracle_public(twin: str) -> float:
     b_ub: list[float] = []
 
     def dA(k: float) -> np.ndarray:
+        """Compute d a for the evaluate reveal necessity workflow."""
         r = np.zeros(nx)
         r[0] += k
         r[1] -= k
         return r
 
     def dB(k: float) -> np.ndarray:
+        """Compute d b for the evaluate reveal necessity workflow."""
         r = np.zeros(nx)
         r[3] += k
         r[4] -= k
@@ -148,7 +155,7 @@ def _oracle_public(twin: str) -> float:
 
 
 def main() -> None:
-
+    """Run the command-line entry point."""
     nrc = {
         "obs_gap": _l1_gap(_public_obs(TWINS["y_A"]), _public_obs(TWINS["y_B"])),
         "oracle": min(_oracle_public("y_A"), _oracle_public("y_B")),

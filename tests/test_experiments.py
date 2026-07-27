@@ -1,4 +1,4 @@
-""
+"""Regression tests for test experiments. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -14,10 +14,12 @@ KNOWN_KUHN_VALUE = -1.0 / 18.0
 
 
 def test_default_seeds_are_42_to_46():
+    """Verify that default seeds are 42 to 46."""
     assert DEFAULT_SEEDS == (42, 43, 44, 45, 46)
 
 
 def test_rounds_log_has_new_series_keys():
+    """Verify that rounds log has new series keys."""
     results = run_online_adaptation(
         static_biased_opponent(), rounds=3, episodes_per_round=20, out_dir=None
     )
@@ -27,7 +29,7 @@ def test_rounds_log_has_new_series_keys():
 
 
 def test_ci_width_shrinks_with_evidence():
-
+    """Verify that confidence interval width shrinks with evidence."""
     results = run_online_adaptation(
         static_biased_opponent(), rounds=40, episodes_per_round=200, out_dir=None
     )
@@ -36,6 +38,7 @@ def test_ci_width_shrinks_with_evidence():
 
 
 def test_replicated_run_aggregates_and_is_safe():
+    """Verify that replicated run aggregates and is safe."""
     results = run_online_adaptation_replicated(
         static_biased_opponent(bet_prob=0.05),
         rounds=15,
@@ -55,6 +58,7 @@ def test_replicated_run_aggregates_and_is_safe():
 
 
 def test_ablation_sweeps_three_axes():
+    """Verify that ablation sweeps three axes."""
     ablation = run_ablation(
         static_biased_opponent(),
         deltas=(0.05, 0.2),
@@ -75,6 +79,7 @@ def test_ablation_sweeps_three_axes():
 
 
 def test_render_online_figures_smoke(tmp_path):
+    """Verify that render online figures smoke."""
     pytest.importorskip("matplotlib")
     from safe_observation.evaluation.plots import render_online_figures
 
@@ -92,6 +97,7 @@ def test_render_online_figures_smoke(tmp_path):
 
 
 def test_render_ablation_figure_smoke(tmp_path):
+    """Verify that render ablation figure smoke."""
     pytest.importorskip("matplotlib")
     from safe_observation.evaluation.plots import render_ablation_figure
 

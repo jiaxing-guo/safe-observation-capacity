@@ -1,4 +1,4 @@
-""
+"""Regression tests for test agents. See the corresponding implementation module and supplementary Reproducibility."""
 
 import pytest
 
@@ -21,6 +21,7 @@ KNOWN_KUHN_VALUE = -1.0 / 18.0
 
 
 def test_fallback_mixture_repairs_unsafe_candidate():
+    """Verify that fallback mixture repairs unsafe candidate."""
     blueprint = solve_blueprint("kuhn", method="lp")
     x_blue = blueprint.realization
 
@@ -36,6 +37,7 @@ def test_fallback_mixture_repairs_unsafe_candidate():
 
 
 def test_fallback_keeps_safe_candidate_unchanged():
+    """Verify that fallback keeps safe candidate unchanged."""
     blueprint = solve_blueprint("kuhn", method="lp")
     x_blue = blueprint.realization
 
@@ -44,7 +46,7 @@ def test_fallback_keeps_safe_candidate_unchanged():
 
 
 def test_agent_initial_decision_is_safe_and_blueprint_like():
-
+    """Verify that agent initial decision is safe and blueprint like."""
     agent = OnlineSafeExploitAgent(delta=0.05, eps_safe=0.0)
     decision = agent.select()
     assert decision.safety_value >= KNOWN_KUHN_VALUE - 1e-8
@@ -53,6 +55,7 @@ def test_agent_initial_decision_is_safe_and_blueprint_like():
 
 
 def test_static_biased_opponent_exploited():
+    """Verify that static biased opponent exploited."""
     results = run_online_adaptation(
         static_biased_opponent(bet_prob=0.05),
         rounds=60,
@@ -66,6 +69,7 @@ def test_static_biased_opponent_exploited():
 
 
 def test_equilibrium_opponent_no_safety_violation():
+    """Verify that equilibrium opponent no safety violation."""
     results = run_online_adaptation(
         equilibrium_opponent(),
         rounds=40,
@@ -80,6 +84,7 @@ def test_equilibrium_opponent_no_safety_violation():
 
 
 def test_trap_opponent_safety_preserved():
+    """Verify that trap opponent safety preserved."""
     results = run_online_adaptation(
         trap_opponent(),
         rounds=60,
@@ -93,6 +98,7 @@ def test_trap_opponent_safety_preserved():
 
 
 def test_always_fold_is_strongly_exploited():
+    """Verify that always fold is strongly exploited."""
     results = run_online_adaptation(
         always_fold_opponent(),
         rounds=60,
@@ -106,6 +112,7 @@ def test_always_fold_is_strongly_exploited():
 
 
 def test_results_payload_is_serializable_shape():
+    """Verify that results payload is serializable shape."""
     results = run_online_adaptation(
         static_biased_opponent(),
         rounds=5,

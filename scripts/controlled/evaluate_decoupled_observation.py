@@ -1,4 +1,4 @@
-""
+"""Evaluate the decoupled observation experiment. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ L_I = 0.5
 
 
 def _max_coord_under_floor(rewards, idx, rho):
-    ""
+    """Compute max coord under floor."""
     n = len(rewards)
     c = np.zeros(n)
     c[idx] = -1.0
@@ -43,7 +43,7 @@ def _max_coord_under_floor(rewards, idx, rho):
 
 
 def run_case(L_rev: float):
-    ""
+    """Run the case experiment for the evaluate decoupled observation workflow."""
     rewards = [MU0, MU0 - L_I, MU0 - L_rev]
     idx_reach, idx_rev = 1, 2
     I_R = 1.0 / SIGMA**2
@@ -84,6 +84,7 @@ def run_case(L_rev: float):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     cases = {
         "COUPLED (L_rev = L_I)": L_I,
         "DECOUPLED (L_rev = 0, free reveal)": 0.0,

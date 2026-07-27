@@ -1,4 +1,4 @@
-""
+"""Evaluate the residual width experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ TOL = 1e-6
 
 
 def _opponent(game: str):
-    ""
+    """Compute opponent for the evaluate residual width workflow."""
     if game == "leduc":
         return leduc_static_biased_opponent()
     if game == "kuhn":
@@ -34,7 +34,7 @@ def _opponent(game: str):
 
 
 def _continuations(sf, y_star):
-    ""
+    """Compute continuations for the evaluate residual width workflow."""
     out = []
     for info in sf.info_sets:
         acts = [a for a, _ in info.children]
@@ -48,7 +48,7 @@ def _continuations(sf, y_star):
 
 
 def _pin_rows(pins):
-    ""
+    """Compute pin rows for the evaluate residual width workflow."""
     entries: list[tuple[int, int, float]] = []
     h: list[float] = []
     meta: list[tuple[str, int]] = []
@@ -66,7 +66,7 @@ def _pin_rows(pins):
 
 
 def _R_M(pins, v_ref):
-    ""
+    """Compute r m for the evaluate residual width workflow."""
     entries, h, meta = _pin_rows(pins)
     res = robust_safe_response_linear(
         {}, {}, entries, h, v_ref=v_ref, eps_safe=RHO, game=GAME, row_meta=meta
@@ -75,7 +75,7 @@ def _R_M(pins, v_ref):
 
 
 def _opp_constraints(sf):
-    ""
+    """Compute opp constraints for the evaluate residual width workflow."""
     m = sf.num_constraints if hasattr(sf, "num_constraints") else len(sf.e)
     n = sf.num_sequences
     E = np.zeros((m, n))
@@ -86,7 +86,7 @@ def _opp_constraints(sf):
 
 
 def _fiber_argmin(sf, c, forced_children, y_star):
-    ""
+    """Compute fiber argmin for the evaluate residual width workflow."""
     E, e = _opp_constraints(sf)
     pin_rows = []
     pin_rhs = []
@@ -110,6 +110,7 @@ def _fiber_argmin(sf, c, forced_children, y_star):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print(f"# Residual-width probe on {GAME}  (rho={RHO})\n")
     sf = compile_game(GAME, 1)
     bp = solve_blueprint(GAME, method="lp")
@@ -227,6 +228,7 @@ def main() -> None:
 
 
 def _verdict(feasible: bool, residual: bool) -> None:
+    """Compute verdict for the evaluate residual width workflow."""
     print("\n== verdict ==")
     print(
         f"  partial-forcing fiber R_M computable and full-forcing equals V: "

@@ -1,4 +1,4 @@
-""
+"""Config primitives for safe-observation experiments. See Safe Active De-censoring, Experiments, and supplementary Game Instances and Experimental Setup."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -28,7 +28,7 @@ from .online import (
 
 @dataclass
 class ConfigRun:
-    ""
+    """Represent config run for the config workflow."""
 
     kind: str
     name: str
@@ -37,12 +37,13 @@ class ConfigRun:
 
 
 def load_config(path: str | Path) -> dict[str, Any]:
-    ""
+    """Load config for the config workflow."""
     with open(path, "rb") as f:
         return tomllib.load(f)
 
 
 def _render_online(results: dict[str, Any], out_dir: str | Path) -> dict[str, Path]:
+    """Render online for the config workflow."""
     try:
         from ..evaluation.plots import render_online_figures
     except ModuleNotFoundError:
@@ -54,6 +55,7 @@ def _render_online(results: dict[str, Any], out_dir: str | Path) -> dict[str, Pa
 def _render_ablation(
     ablation: dict[str, Any], opponent: str, out_dir: str | Path
 ) -> dict[str, Path]:
+    """Render ablation for the config workflow."""
     try:
         from ..evaluation.plots import render_ablation_figure
     except ModuleNotFoundError:
@@ -67,6 +69,7 @@ def _render_ablation(
 
 
 def _render_probing(comparison: dict[str, Any], out_dir: str | Path) -> dict[str, Path]:
+    """Render probing for the config workflow."""
     try:
         from ..evaluation.plots import render_probing_figure
     except ModuleNotFoundError:
@@ -80,6 +83,7 @@ def _render_probing(comparison: dict[str, Any], out_dir: str | Path) -> dict[str
 def _render_budget_frontier(
     frontier: dict[str, Any], out_dir: str | Path
 ) -> dict[str, Path]:
+    """Render budget frontier for the config workflow."""
     try:
         from ..evaluation.plots import render_budget_frontier_figure
     except ModuleNotFoundError:
@@ -95,6 +99,7 @@ def _render_budget_frontier(
 def _render_importance(
     comparison: dict[str, Any], out_dir: str | Path
 ) -> dict[str, Path]:
+    """Render importance for the config workflow."""
     try:
         from ..evaluation.plots import render_importance_figure
     except ModuleNotFoundError:
@@ -108,6 +113,7 @@ def _render_importance(
 
 
 def _render_coverage(coverage: dict[str, Any], out_dir: str | Path) -> dict[str, Path]:
+    """Render coverage for the config workflow."""
     try:
         from ..evaluation.plots import render_coverage_figure
     except ModuleNotFoundError:
@@ -119,6 +125,7 @@ def _render_coverage(coverage: dict[str, Any], out_dir: str | Path) -> dict[str,
 
 
 def _render_finite_gap(gap: dict[str, Any], out_dir: str | Path) -> dict[str, Path]:
+    """Render finite gap for the config workflow."""
     try:
         from ..evaluation.plots import render_finite_sample_gap_figure
     except ModuleNotFoundError:
@@ -134,6 +141,7 @@ def _render_finite_gap(gap: dict[str, Any], out_dir: str | Path) -> dict[str, Pa
 def _render_baseline(
     comparison: dict[str, Any], out_dir: str | Path
 ) -> dict[str, Path]:
+    """Render baseline for the config workflow."""
     try:
         from ..evaluation.plots import render_baseline_comparison_figure
     except ModuleNotFoundError:
@@ -149,6 +157,7 @@ def _render_baseline(
 def _render_showdown(
     comparison: dict[str, Any], out_dir: str | Path
 ) -> dict[str, Path]:
+    """Render showdown for the config workflow."""
     try:
         from ..evaluation.plots import render_showdown_comparison_figure
     except ModuleNotFoundError:
@@ -164,6 +173,7 @@ def _render_showdown(
 def _render_showdown_sweep(
     comparison: dict[str, Any], out_dir: str | Path
 ) -> dict[str, Path]:
+    """Render showdown sweep for the config workflow."""
     try:
         from ..evaluation.plots import render_showdown_sweep_figure
     except ModuleNotFoundError:
@@ -177,6 +187,7 @@ def _render_showdown_sweep(
 
 
 def _render_adversarial(stress: dict[str, Any], out_dir: str | Path) -> dict[str, Path]:
+    """Render adversarial for the config workflow."""
     try:
         from ..evaluation.plots import render_adversarial_stress_figure
     except ModuleNotFoundError:
@@ -192,6 +203,7 @@ def _render_adversarial(stress: dict[str, Any], out_dir: str | Path) -> dict[str
 def _render_nonstationary(
     stress: dict[str, Any], out_dir: str | Path
 ) -> dict[str, Path]:
+    """Render nonstationary for the config workflow."""
     try:
         from ..evaluation.plots import render_nonstationary_stress_figure
     except ModuleNotFoundError:
@@ -207,7 +219,7 @@ def _render_nonstationary(
 def run_config(
     config: str | Path | Mapping[str, Any], figures: bool | None = None
 ) -> ConfigRun:
-    ""
+    """Run the config experiment for the config workflow."""
     cfg = dict(load_config(config) if isinstance(config, str | Path) else config)
     exp = cfg.get("experiment", {})
     kind = exp.get("kind", "online")
@@ -551,7 +563,7 @@ def run_config(
 
 
 def summarize(run: ConfigRun) -> str:
-    ""
+    """Summarize the supplied experiment records."""
     r = run.results
     if run.kind == "blueprint":
         return (

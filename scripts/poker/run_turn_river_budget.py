@@ -1,4 +1,4 @@
-""
+"""Run the turn river budget experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import multiprocessing as mp
@@ -45,7 +45,7 @@ _G: dict = {}
 
 
 def _init_worker(game: str, v_ref: float, omega: dict, payloads: dict) -> None:
-    ""
+    """Initialize process-local state for a parallel worker."""
     _G["game"] = game
     _G["v_ref"] = v_ref
     _G["omega"] = omega
@@ -54,7 +54,7 @@ def _init_worker(game: str, v_ref: float, omega: dict, payloads: dict) -> None:
 
 
 def _solve_cell(task: tuple[str, float]) -> dict:
-    ""
+    """Solve cell for the run turn river budget workflow."""
     name, rho = task
     t0 = time.time()
     game = _G["game"]
@@ -79,6 +79,7 @@ def _solve_cell(task: tuple[str, float]) -> dict:
     )
 
     def realized(resp):
+        """Evaluate a realization plan against the selected opponent."""
         return payoff.bilinear(list(resp.realization), y_star) - v_ref
 
     g_core = realized(core)
@@ -103,6 +104,7 @@ def _solve_cell(task: tuple[str, float]) -> dict:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     sf0 = compile_game(game, 0)
     sf1 = compile_game(game, 1)

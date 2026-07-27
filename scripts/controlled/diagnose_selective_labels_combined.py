@@ -1,4 +1,4 @@
-""
+"""Diagnose selective labels combined. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ SEED = 2026
 
 
 def combined_confidence(model, rho, N=N, seed=SEED):
-    ""
+    """Construct confidence constraints for combined."""
     L, U = D._passive_confidence(model, N, seed)
     rng = np.random.default_rng(seed + 777)
     m = model["m"]
@@ -40,11 +40,12 @@ def combined_confidence(model, rho, N=N, seed=SEED):
 
 
 def make_model():
+    """Create model for the diagnose selective labels combined workflow."""
     return D._build_model_orig()
 
 
 def main():
-
+    """Run the command-line entry point."""
     D._build_model_orig = D._build_model
     D.M = 30
     D._init()
@@ -52,6 +53,7 @@ def main():
     rho = 0.05
 
     def band(pi):
+        """Compute or draw a mean-and-uncertainty band."""
         p, q, gem, s = model["p"], model["q_true"], model["censored"], model["s"]
         val = p * pi * (q - C)
         return (

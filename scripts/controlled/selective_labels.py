@@ -1,4 +1,4 @@
-""
+"""Research utility for selective labels. See supplementary Additional Experiments."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from scipy.optimize import linprog
 
 @dataclass
 class SLInstance:
-    ""
+    """Represent selective-label instance for the selective labels workflow."""
 
     p: np.ndarray
     L: np.ndarray
@@ -23,11 +23,12 @@ class SLInstance:
 
     @property
     def m(self) -> int:
+        """Return the number of latent categories in the instance."""
         return int(len(self.p))
 
 
 def _monotone_ub(m: int) -> tuple[np.ndarray, np.ndarray] | None:
-    ""
+    """Compute monotone ub for the selective labels workflow."""
     if m < 2:
         return None
     rows = []
@@ -40,7 +41,7 @@ def _monotone_ub(m: int) -> tuple[np.ndarray, np.ndarray] | None:
 
 
 def robust_utility(inst: SLInstance, pi: np.ndarray) -> tuple[float, np.ndarray]:
-    ""
+    """Compute robust utility for the selective labels workflow."""
     w = inst.p * np.asarray(pi, dtype=float)
     bounds = list(zip(inst.L, inst.U, strict=True))
     A_ub, b_ub = (None, None)
@@ -57,16 +58,17 @@ def robust_utility(inst: SLInstance, pi: np.ndarray) -> tuple[float, np.ndarray]
 
 
 def incumbent_utility(inst: SLInstance) -> float:
-    ""
+    """Compute incumbent utility for the selective labels workflow."""
     return robust_utility(inst, inst.pi0)[0]
 
 
 def robust_optimal_value(inst: SLInstance) -> float:
-    ""
+    """Compute the robust optimal value."""
     return robust_response(inst, 0.0, U0=0.0)[1]
 
 
 def _capacity_program(inst: SLInstance, j: int, rho: float, U0: float):
+    """Compute capacity program for the selective labels workflow."""
     m = inst.m
     n_e = (m - 1) if inst.monotone else 0
     nvar = 3 * m + n_e
@@ -100,7 +102,7 @@ def _capacity_program(inst: SLInstance, j: int, rho: float, U0: float):
 def safe_capacity(
     inst: SLInstance, j: int, rho: float, U0: float | None = None
 ) -> tuple[float, float]:
-    ""
+    """Compute safe capacity for the selective labels workflow."""
     if U0 is None:
         U0 = incumbent_utility(inst)
     c_obj, A_ub, b_ub, A_eq, b_eq, bounds = _capacity_program(inst, j, rho, U0)
@@ -126,7 +128,7 @@ def safe_capacity(
 def reach_probe(
     inst: SLInstance, targets, rho: float, U0: float | None = None
 ) -> np.ndarray:
-    ""
+    """Compute reach probe for the selective labels workflow."""
     if U0 is None:
         U0 = robust_optimal_value(inst)
     c_obj, A_ub, b_ub, A_eq, b_eq, bounds = _capacity_program(inst, 0, rho, U0)
@@ -150,7 +152,7 @@ def reach_probe(
 def robust_response(
     inst: SLInstance, rho: float, U0: float | None = None
 ) -> tuple[np.ndarray, float]:
-    ""
+    """Compute robust response for the selective labels workflow."""
     if U0 is None:
         U0 = incumbent_utility(inst)
     m = inst.m
@@ -178,7 +180,7 @@ def certified_safe_response(
     rho: float,
     U0: float | None = None,
 ) -> tuple[np.ndarray, float]:
-    ""
+    """Compute certified safe response for the selective labels workflow."""
     if U0 is None:
         U0 = robust_optimal_value(inst_P)
     m = inst_P.m
@@ -247,7 +249,7 @@ def make_lending_instance(
     censored_frac: float = 0.5,
     monotone: bool = True,
 ) -> SLInstance:
-    ""
+    """Create lending instance for the selective labels workflow."""
     rng = np.random.default_rng(seed)
     p = np.full(m, 1.0 / m)
     score = np.linspace(0.0, 1.0, m)
@@ -266,7 +268,7 @@ def make_lending_instance(
 
 
 def simulate_logs(inst: SLInstance, n: int, seed: int) -> dict:
-    ""
+    """Simulate logs for the selective labels workflow."""
     rng = np.random.default_rng(seed)
     z = rng.choice(inst.m, size=n, p=inst.p)
 
@@ -287,7 +289,7 @@ def simulate_logs(inst: SLInstance, n: int, seed: int) -> dict:
 
 
 def build_partial_id(logs: dict, delta: float = 0.1) -> tuple[np.ndarray, np.ndarray]:
-    ""
+    """Build partial identifier for the selective labels workflow."""
     r, qobs, n = logs["r"], logs["qobs"], logs["n"]
     m = len(r)
     L = np.zeros(m)
@@ -303,7 +305,7 @@ def build_partial_id(logs: dict, delta: float = 0.1) -> tuple[np.ndarray, np.nda
 
 
 def _regression_1b() -> bool:
-    ""
+    """Compute regression 1b for the selective labels workflow."""
     inst = SLInstance(
         p=np.array([0.8, 0.2]),
         L=np.array([0.9, 0.52]),
@@ -330,7 +332,7 @@ def _regression_1b() -> bool:
 
 
 def _demo_monotone_coupling() -> bool:
-    ""
+    """Compute demo monotone coupling for the selective labels workflow."""
     p = np.full(3, 1.0 / 3.0)
     L = np.array([0.6, 0.3, 0.5])
     U = np.array([0.9, 0.9, 0.9])
@@ -348,6 +350,7 @@ def _demo_monotone_coupling() -> bool:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print("selective-labels core self-test\n")
     print("(A) regression vs 1B closed form (box mode):")
     a_ok = _regression_1b()

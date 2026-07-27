@@ -1,4 +1,4 @@
-""
+"""Evaluate the finite sample routing experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -37,13 +37,14 @@ OUT = Path(
 
 
 def _is_river_key(key: str) -> bool:
+    """Compute is river key for the evaluate finite sample routing workflow."""
     return "/" in key
 
 
 def _pf_eq_turn(
     groups, info_by_label, y_eq, omega, fold_idx
 ) -> dict[str, tuple[float, int]]:
-    ""
+    """Compute pf eq turn for the evaluate finite sample routing workflow."""
     out: dict[str, tuple[float, int]] = {}
     for key, members in groups.items():
         if _is_river_key(key):
@@ -65,7 +66,7 @@ def _pf_eq_turn(
 
 
 def _empirical_signal(ev_public, pf_eq_turn, episodes: int) -> float:
-    ""
+    """Compute empirical signal for the evaluate finite sample routing workflow."""
     counts = ev_public._public_counts()
     total = 0.0
     for key, (pf_eq, fi) in pf_eq_turn.items():
@@ -81,6 +82,7 @@ def _empirical_signal(ev_public, pf_eq_turn, episodes: int) -> float:
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     game = GAME
     print(
         f"# Q4b FINITE-SAMPLE validation of fold_pub_turn  game={game}  "
@@ -225,6 +227,7 @@ def main() -> None:
 
 
 def _std(values: list[float]) -> float:
+    """Compute the sample standard deviation of the supplied values."""
     return statistics.stdev(values) if len(values) > 1 else 0.0
 
 

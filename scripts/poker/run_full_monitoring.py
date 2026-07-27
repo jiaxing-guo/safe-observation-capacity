@@ -1,4 +1,4 @@
-""
+"""Run the full monitoring experiment. See Experiments and supplementary Certification at the Unbucketed River."""
 
 from dataclasses import dataclass
 import json
@@ -42,7 +42,7 @@ def _run_one(
     scbr_value: float,
     seed: int,
 ) -> dict:
-    ""
+    """Run the one experiment for the run full monitoring workflow."""
     game = opponent.game
     payoff = build_payoff(game)
     sf0 = compile_game(game, 0)
@@ -112,6 +112,8 @@ def _run_one(
 
 @dataclass(frozen=True)
 class _Cell:
+    """Represent cell for the run full monitoring workflow."""
+
     opp_key: str
     opponent: Opponent
     method_name: str
@@ -123,6 +125,7 @@ class _Cell:
 
 
 def _worker(cell: _Cell):
+    """Execute one experiment cell in a worker process."""
     res = _run_one(
         cell.method_name,
         cell.opponent,
@@ -136,6 +139,7 @@ def _worker(cell: _Cell):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     suite = leduc_opponent_suite()
     game = next(iter(suite.values())).game
     bp = solve_blueprint(game, method="lp")

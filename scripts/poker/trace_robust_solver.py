@@ -1,4 +1,4 @@
-""
+"""Research utility for trace robust solver. See The Safe Observation-Capacity Frontier, Certified Value Recovery, and supplementary Certification at the Unbucketed River."""
 
 import json
 import os
@@ -36,7 +36,7 @@ _ITER_RE = re.compile(
 
 
 def _capture_stderr(fn):
-    ""
+    """Compute capture stderr for the trace robust solver workflow."""
     old_fd = os.dup(2)
     tf = tempfile.NamedTemporaryFile("w+", delete=False)
     raised = False
@@ -61,6 +61,7 @@ def _capture_stderr(fn):
 
 
 def main() -> None:
+    """Run the command-line entry point."""
     print(
         f"# FA3 solver trace  game={GAME}  opponent={OPPONENT}  rho={RHO}  "
         f"max_iters={MAX_ITERS}",
